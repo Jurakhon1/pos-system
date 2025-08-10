@@ -1,23 +1,29 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import './globals.css';
-import { Sidebar } from "@/features/sidebar/ui/Sidebar";
+import "./globals.css";
+import { SideMenu } from "@/shared/ui/side-menu/side-menu";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "POS Management Dashboard",
-  description: "A management dashboard for POS systems",
+  title: "POS System",
+  description: "Point of Sale Management System",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-4 md:ml-64">{children}</main>
-        </div>
+          <div className="flex h-screen">
+            <SideMenu />
+            <main className="flex-1 ml-64 lg:ml-64">
+              {children}
+            </main>
+          </div>
       </body>
     </html>
   );
