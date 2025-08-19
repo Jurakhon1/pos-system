@@ -37,8 +37,8 @@ interface MenuItem {
 }
 
 export default function POSPage() {
- const {menuItems}=useMenuItems();
- const {categories}=useCategories()
+  const {menuItems}=useMenuItems();
+  const {categories}=useCategories()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -50,10 +50,9 @@ export default function POSPage() {
   const {tables,isLoading,error,fetchTables,updateTableStatus}=useTables()
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
- 
-
-
   
+  // Загружаем данные при монтировании компонента
+
 
   const handleCreateOrder = async () => {
     const formData: OrderFormData = {
@@ -170,274 +169,171 @@ export default function POSPage() {
       </div>
 
       {/* Правая панель - корзина и детали заказа */}
-      <div className="w-1/3 bg-white border-l p-4 flex flex-col">
-        <h2 className="text-xl font-bold mb-4">Детали заказа</h2>
-        
-        {/* Тип заказа */}
-        <div className="mb-4">
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Тип заказа
-          </label>
-          <div className="flex gap-2">
-            <Button
-              variant={orderType === 'dine_in' ? "default" : "outline"}
-              onClick={() => setOrderType('dine_in')}
-              className="flex-1"
-            >
-              В ресторане
-            </Button>
-            <Button
-              variant={orderType === 'takeaway' ? "default" : "outline"}
-              onClick={() => setOrderType('takeaway')}
-              className="flex-1"
-            >
-              На вынос
-            </Button>
-          </div>
-        </div>
+      <div className="w-full md:w-1/3 bg-white border-l border-gray-200 p-6 flex flex-col gap-6 shadow-sm rounded-lg">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2" aria-label="Детали заказа">Детали заказа</h2>
 
-        {/* Информация о клиенте */}
-        <div className="space-y-4 mb-4">
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Имя клиента"
-              className="pl-10"
-              required
-            />
-          </div>
-          
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              placeholder="Телефон"
-              className="pl-10"
-              required
-            />
+        <div className="flex flex-col gap-4">
+          {/* Order Type Selector */}
+          <div className="bg-gray-50 p-4 rounded-md">
+            <label htmlFor="orderType" className="block text-sm font-medium text-gray-700 mb-1">Тип заказа</label>
+            <select
+              id="orderType"
+              value={orderType}
+              onChange={(e) => setOrderType(e.target.value as 'dine_in' | 'takeaway')}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              aria-label="Выбор типа заказа"
+            >
+              <option value="dine_in">На месте</option>
+              <option value="takeaway">На вынос</option>
+            </select>
           </div>
 
-          {/* Выбор стола (только для заказов в ресторане) */}
-          {orderType === 'dine_in' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Номер стола
-              </label>
-              <div className="relative">
-                <select
-                  value={tableId || ''}
-                  onChange={(e) => {
-                    const selectedTable = tables?.find(table => table.id === e.target.value);
-                    if (selectedTable) {
-                      setTableNumber(selectedTable.number);
-                      setTableId(selectedTable.id);
-                    } else {
-                      setTableNumber(null);
-                      setTableId(null);
-                    }
-                  }}
-                  className="w-full pl-3 pr-12 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-700 font-medium transition-all duration-200 hover:border-gray-400"
-                  required
-                >
-                  <option value="" className="text-gray-500">Выберите стол</option>
-                  {tables
-                    ?.filter((table) => table.location_id === localStorage.getItem("locationId"))
-                    ?.sort((a, b) => a.number - b.number) // Сортируем по номеру стола
-                    ?.map((table) => (
-                      <option 
-                        key={table.id} 
-                        value={table.id}
-                        disabled={!table.is_active}
-                        className={!table.is_active ? 'text-gray-400 bg-gray-100' : 'text-gray-700'}
-                      >
-                        {table.is_active ? '🟢' : '🔴'} Стол {table.number} {!table.is_active ? '(занят)' : '(свободен)'}
-                      </option>
-                    ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <TableIcon className="h-4 w-4 text-gray-400" />
-                </div>
-                {tableId && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setTableNumber(null);
-                      setTableId(null);
-                    }}
-                    className="absolute inset-y-0 right-8 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-md transition-colors"
-                    title="Очистить выбор стола"
-                  >
-                    ✕
-                  </Button>
-                )}
-              </div>
-              {tableNumber && (
-                <p className="text-sm text-green-600 flex items-center gap-2">
-                  <TableIcon className="h-4 w-4" />
-                  Выбран стол: {tableNumber}
-                </p>
-              )}
+          {/* Customer Info Form */}
+          <div className="bg-gray-50 p-4 rounded-md flex flex-col gap-4">
+            <div>
+              <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">Имя клиента</label>
+              <input
+                id="customerName"
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Введите имя"
+                aria-label="Имя клиента"
+              />
+            </div>
+            <div>
+              <label htmlFor="customerPhone" className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+              <input
+                id="customerPhone"
+                type="tel"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Введите номер телефона"
+                aria-label="Телефон клиента"
+              />
+            </div>
+            <div>
+              <label htmlFor="guestCount" className="block text-sm font-medium text-gray-700 mb-1">Количество гостей</label>
+              <input
+                id="guestCount"
+                type="number"
+                value={guestCount}
+                onChange={(e) => setGuestCount(Number(e.target.value))}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                min="1"
+                placeholder="1"
+                aria-label="Количество гостей"
+              />
+            </div>
+            <div>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Примечания</label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Дополнительные примечания"
+                rows={3}
+                aria-label="Примечания к заказу"
+              />
+            </div>
+          </div>
+
+          {/* Table Selector (Conditional) */}
+          {orderType === "dine_in" && (
+            <div className="bg-gray-50 p-4 rounded-md">
+              <label htmlFor="tableId" className="block text-sm font-medium text-gray-700 mb-1">Номер стола</label>
+              <select
+                id="tableId"
+                value={tableId || ""}
+                onChange={(e) => {
+                  setTableId(e.target.value);
+                  const selectedTable = tables?.find((table) => table.id === e.target.value);
+                  setTableNumber(selectedTable ? selectedTable.number : null);
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Выбор стола"
+              >
+                <option value="">Выберите стол</option>
+                {tables?.map((table) => (
+                  <option key={table.id} value={table.id}>
+                    Стол {table.number}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="number"
-              value={guestCount}
-              onChange={(e) => setGuestCount(Number(e.target.value))}
-              placeholder="Количество гостей"
-              className="pl-10"
-              min={1}
-              max={20}
-            />
-          </div>
-
-          <div className="relative">
-            <ClipboardList className="absolute left-3 top-3 text-gray-400 h-4 w-4" />
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Примечания к заказу"
-              className="w-full pl-10 pr-4 py-2 border rounded-md"
-              rows={3}
-            />
-          </div>
-        </div>
-
-        {/* Корзина */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="sticky top-0 bg-white pb-4 mb-4 border-b border-gray-100">
-            <h3 className="font-semibold mb-2 flex items-center gap-2 text-lg">
-              <ShoppingCart className="h-5 w-5 text-blue-600" />
-              Корзина
-              {cartItems.length > 0 && (
-                <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full animate-pulse">
-                  {cartItems.length}
-                </span>
-              )}
-            </h3>
-            {cartItems.length > 0 && (
-              <p className="text-sm text-gray-500">
-                Общая сумма: <span className="font-semibold text-green-600">
-                  {cartItems.reduce((sum: number, item: CartItem) => sum + Number(item.price) * item.quantity, 0).toLocaleString('ru-RU')} ₽
-                </span>
-              </p>
-            )}
-          </div>
-          
-          {cartItems.length === 0 ? (
-            <div className="text-center py-8">
-              <ShoppingCart className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">Корзина пуста</p>
-              <p className="text-gray-400 text-xs">Добавьте товары из меню</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {cartItems.map((item: CartItem) => (
-                <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100 hover:border-gray-200 transition-all">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 truncate">{item.name}</h4>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {Number(item.price).toLocaleString('ru-RU')} ₽ × {item.quantity}
-                      </p>
-                    </div>
-                    <div className="text-right ml-3">
-                      <p className="font-bold text-green-600 text-lg">
-                        {(Number(item.price) * item.quantity).toLocaleString('ru-RU')} ₽
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-8 h-8 p-0 hover:bg-red-50 hover:border-red-200"
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-12 text-center font-medium text-gray-700 bg-white px-2 py-1 rounded border">
-                        {item.quantity}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-8 h-8 p-0 hover:bg-green-50 hover:border-green-200"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Итого и кнопка создания заказа */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-semibold text-gray-700">Итого:</span>
-              <span className="text-2xl font-bold text-green-600">
-                {cartItems.reduce((sum: number, item: CartItem) => sum + Number(item.price) * item.quantity, 0).toLocaleString('ru-RU')} ₽
-              </span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Товаров: {cartItems.length}</span>
-              <span>Позиций: {cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
-            </div>
-          </div>
-          
-          <Button
-            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-            size="lg"
-            onClick={handleCreateOrder}
-            disabled={isCreating || cartItems.length === 0 || !customerName.trim() || !customerPhone.trim() || (orderType === 'dine_in' && !tableId)}
-          >
-            {isCreating ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Создание заказа...
-              </div>
+          {/* Cart */}
+          <div className="border-t border-gray-200 pt-4">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Корзина</h3>
+            {cartItems.length === 0 ? (
+              <p className="text-gray-500">Корзина пуста</p>
             ) : (
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                Создать заказ
-              </div>
+              <ul className="flex flex-col gap-2">
+                {cartItems.map((item) => (
+                  <li key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                    <span>{item.name}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="px-2 py-1 bg-gray-200 rounded-md hover:bg-gray-300"
+                        aria-label={`Уменьшить количество ${item.name}`}
+                      >
+                        -
+                      </button>
+                      <span>{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="px-2 py-1 bg-gray-200 rounded-md hover:bg-gray-300"
+                        aria-label={`Увеличить количество ${item.name}`}
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="px-2 py-1 bg-red-100 text-red-600 rounded-md hover:bg-red-200"
+                        aria-label={`Удалить ${item.name} из корзины`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          </Button>
-          
-          {cartItems.length > 0 && (
-            <Button
-              variant="outline"
-              className="w-full mt-3 text-gray-600 hover:text-red-600 hover:border-red-300"
-              onClick={clearCart}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Очистить корзину
-            </Button>
-          )}
+            {cartItems.length > 0 && (
+              <button
+                onClick={clearCart}
+                className="mt-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                aria-label="Очистить корзину"
+              >
+                Очистить корзину
+              </button>
+            )}
+          </div>
+
+          {/* Order Summary */}
+          <div className="mt-4">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Итог заказа</h3>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="text-sm text-gray-600">Тип заказа: {orderType === "dine_in" ? "На месте" : "На вынос"}</p>
+              <p className="text-sm text-gray-600">Имя: {customerName || "Не указано"}</p>
+              <p className="text-sm text-gray-600">Телефон: {customerPhone || "Не указано"}</p>
+              {orderType === "dine_in" && <p className="text-sm text-gray-600">Стол: {tableNumber || "Не выбран"}</p>}
+              <p className="text-sm text-gray-600">Итоговая сумма: {cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0)} ₽</p>
+              <button
+                onClick={handleCreateOrder}
+                disabled={isCreating || cartItems.length === 0}
+                className={`mt-4 w-full px-4 py-2 rounded-md text-white ${isCreating || cartItems.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                aria-label="Создать заказ"
+              >
+                {isCreating ? "Создание..." : "Создать заказ"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
