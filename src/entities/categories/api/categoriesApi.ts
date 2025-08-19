@@ -2,12 +2,18 @@ import api from "@/shared/api/axios";
 import { Category } from "@/shared/types/categories";
 
 export const categoriesApi = {
-  getCategories: async () => {
-    const response = await api.get(`/categories`);
+  getCategories: async (locationId?: string) => {
+    // Получаем категории меню
+    const params = new URLSearchParams();
+    if (locationId) {
+      params.append('location_id', locationId);
+    }
+    
+    const response = await api.get(`/menu/categories?${params.toString()}`);
     return response.data;
   },
     getCategoryById: async (categoryId: string) => {
-        const response = await api.get(`/categories/${categoryId}`);
+        const response = await api.get(`/menu/categories/${categoryId}`);
         return response.data;
     },
     createCategory: async (categoryData: Category) => {

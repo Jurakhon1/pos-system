@@ -9,12 +9,12 @@ import { TableSelection } from "@/features/table-selection";
 interface ShoppingCartProps {
   items: CartItem[];
   total: number;
-  selectedTable: number | null;
+  selectedTable: string | null;
   onUpdateQuantity: (id: number | string, change: number) => void;
   onRemoveItem: (id: number | string) => void;
   onClearCart: () => void;
   onCheckout: () => void;
-  onTableSelect: (tableNumber: number) => void;
+  onTableSelect: (tableId: string) => void;
   onTableClear: () => void;
   isCheckoutLoading: boolean;
 }
@@ -101,39 +101,28 @@ export const ShoppingCartComponent = ({
                     </Button>
                   </div>
                 </div>
-                 </motion.div>
-               ))}
-             </AnimatePresence>
-           </div>
-        )}
-      </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Итого */}
-      <div className="border-t pt-4 mb-4">
-        <div className="flex justify-between items-center text-xl font-bold">
+      <div className="border-t border-gray-200 pt-4 mb-4">
+        <div className="flex justify-between items-center text-lg font-bold">
           <span>Итого:</span>
           <span className="text-green-600">{total} ₽</span>
         </div>
       </div>
 
-      {/* Кнопки действий */}
-      <div className="space-y-2">
-        <Button
-          className="w-full bg-green-500 hover:bg-green-600 text-white active:scale-95 transition-transform"
-          disabled={items.length === 0 || isCheckoutLoading}
-          onClick={onCheckout}
-        >
-          {isCheckoutLoading ? 'Создание заказа...' : 'Оформить заказ'}
-        </Button>
-        <Button
-          variant="destructive"
-          className="w-full active:scale-95 transition-transform"
-          onClick={onClearCart}
-          disabled={items.length === 0 || isCheckoutLoading}
-        >
-          Очистить корзину
-        </Button>
-      </div>
+      {/* Кнопка оформления заказа */}
+      <Button
+        onClick={onCheckout}
+        disabled={items.length === 0 || isCheckoutLoading}
+        className="w-full bg-green-500 hover:bg-green-600 text-white py-3"
+      >
+        {isCheckoutLoading ? 'Создание заказа...' : 'Оформить заказ'}
+      </Button>
     </div>
   );
 };

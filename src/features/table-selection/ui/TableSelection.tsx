@@ -1,141 +1,115 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Table, Hash } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Table } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
+import { tableApi, Table as TableType } from "@/entities/tables";
+import { useAuth } from "@/entities/auth/hooks/useAuth";
 
 interface TableSelectionProps {
-  selectedTable: number | null;
-  onTableSelect: (tableNumber: number) => void;
+  selectedTable: string | null;
+  onTableSelect: (tableId: string) => void;
   onTableClear: () => void;
 }
 
-export const TableSelectionComponent = ({
+export const TableSelection = ({
   selectedTable,
   onTableSelect,
-  onTableClear
+  onTableClear,
 }: TableSelectionProps) => {
-  const [customTable, setCustomTable] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [tables, setTables] = useState<TableType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { getCurrentLocationId } = useAuth();
 
-  // Предустановленные номера столов
-  const presetTables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  useEffect(() => {
+    const fetchTables = async () => {
+      setIsLoading(true);
+      try {
+        const locationId = getCurrentLocationId();
+        console.log('🔍 Fetching tables for location:', locationId);
+        
+        if (!locationId) {
+          console.error('❌ No locationId found!');
+          setTables([]);
+          return;
+        }
+        
+        const tablesData = await tableApi.getTables(locationId);
+        console.log('✅ Loaded tables:', tablesData);
+        console.log('📊 Tables count:', tablesData.length);
+        
+        if (tablesData.length === 0) {
+          console.warn('⚠️ No tables found for location:', locationId);
+        } else {
+          console.log('📋 First table details:', {
+            id: tablesData[0].id,
+            number: tablesData[0].number,
+            location_id: tablesData[0].location_id,
+            is_active: tablesData[0].is_active
+          });
+        }
+        
+        setTables(tablesData);
+      } catch (error) {
+        console.error('❌ Failed to fetch tables:', error);
+        setTables([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleCustomTableSubmit = () => {
-    const tableNum = parseInt(customTable);
-    if (tableNum > 0) {
-      onTableSelect(tableNum);
-      setCustomTable("");
-      setShowCustomInput(false);
-    }
-  };
+    fetchTables();
+  }, [getCurrentLocationId]);
 
-  const handleTableSelect = (tableNumber: number) => {
-    if (selectedTable === tableNumber) {
-      onTableClear();
-    } else {
-      onTableSelect(tableNumber);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <Table className="w-4 h-4" />
+          Номер стола
+        </label>
+        <div className="text-sm text-gray-500">Загрузка столов...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg p-4 border border-gray-200">
-      <div className="flex items-center gap-2 mb-4">
-        <Table className="w-5 h-5 text-gray-600" />
-        <h3 className="font-medium text-gray-900">Выбор стола</h3>
-      </div>
-
-      {/* Выбранный стол */}
-      {selectedTable && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-blue-800 font-medium">
-              Стол №{selectedTable}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onTableClear}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              Изменить
-            </Button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Предустановленные столы */}
-      <div className="grid grid-cols-5 gap-2 mb-4">
-        {presetTables.map((tableNumber) => (
-          <motion.div
-            key={tableNumber}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Button
-              variant={selectedTable === tableNumber ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleTableSelect(tableNumber)}
-              className="w-full h-10"
-            >
-              {tableNumber}
-            </Button>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Кастомный номер стола */}
-      <div className="flex gap-2">
-        {!showCustomInput ? (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+        <Table className="w-4 h-4" />
+        Номер стола
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {tables.map((table) => (
           <Button
-            variant="outline"
-            onClick={() => setShowCustomInput(true)}
-            className="flex-1"
+            key={table.id}
+            type="button"
+            variant={selectedTable === table.id ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onTableSelect(table.id)}
+            className="w-12 h-10"
+            disabled={!table.is_active}
           >
-            <Hash className="w-4 h-4 mr-2" />
-            Другой номер
+            {table.number}
           </Button>
-        ) : (
-          <div className="flex gap-2 flex-1">
-            <Input
-              type="number"
-              placeholder="Номер стола"
-              value={customTable}
-              onChange={(e) => setCustomTable(e.target.value)}
-              min="1"
-              className="flex-1"
-            />
-            <Button
-              onClick={handleCustomTableSubmit}
-              disabled={!customTable || parseInt(customTable) <= 0}
-              size="sm"
-            >
-              OK
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCustomInput(false);
-                setCustomTable("");
-              }}
-              size="sm"
-            >
-              Отмена
-            </Button>
-          </div>
+        ))}
+        {selectedTable && (
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={onTableClear}
+            className="w-12 h-10"
+          >
+            ✕
+          </Button>
         )}
       </div>
-
-      {/* Подсказка */}
-      <p className="text-xs text-gray-500 mt-2">
-        Выберите номер стола для заказа. Если стол не выбран, заказ будет создан без привязки к столу.
-      </p>
+      {selectedTable && (
+        <p className="text-sm text-green-600">
+          Выбран стол: {tables.find(t => t.id === selectedTable)?.number}
+        </p>
+      )}
     </div>
   );
 };

@@ -1,53 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { categoriesApi } from "../api/categoriesApi";
-import { Category } from "@/shared/types/categories";
+import { useAuth } from "@/entities/auth/hooks/useAuth";
 
 export const useCategories = () => {
-  const queryClient = useQueryClient();
+  const { getCurrentLocationId } = useAuth();
+  const locationId = getCurrentLocationId();
 
-  const {
-    data: categories,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["categories"],
-    queryFn: categoriesApi.getCategories,
-  });
-
-  const createCategoryMutation = useMutation({
-    mutationFn: (categoryData: Category) => categoriesApi.createCategory(categoryData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-  });
-
-  const updateCategoryMutation = useMutation({
-    mutationFn: ({ categoryId, categoryData }: { categoryId: string; categoryData: Partial<Category> }) =>
-      categoriesApi.updateCategory(categoryId, categoryData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-  });
-
-  const deleteCategoryMutation = useMutation({
-    mutationFn: (categoryId: string) => categoriesApi.deleteCategory(categoryId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
+  const { data: categories, isLoading, error } = useQuery({
+    queryKey: ["categories", locationId],
+    queryFn: () => categoriesApi.getCategories(locationId),
+    enabled: !!locationId, // Запрос выполняется только если есть locationId
   });
 
   return {
     categories,
     isLoading,
     error,
-    refetch,
-    createCategory: createCategoryMutation.mutate,
-    updateCategory: updateCategoryMutation.mutate,
-    deleteCategory: deleteCategoryMutation.mutate,
-    isCreating: createCategoryMutation.isPending,
-    isUpdating: updateCategoryMutation.isPending,
-    isDeleting: deleteCategoryMutation.isPending,
   };
 };
 

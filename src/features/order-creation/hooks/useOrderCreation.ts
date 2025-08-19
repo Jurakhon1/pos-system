@@ -14,7 +14,7 @@ export interface OrderFormData {
 
 export const useOrderCreation = () => {
   const { createOrderFromCart, isCreatingFromCart } = useOrders();
-  const { getCurrentUserId } = useAuth();
+  const { getCurrentUserId, getCurrentLocationId } = useAuth();
 
   const createOrder = useCallback((
     cartItems: CartItem[],
@@ -43,6 +43,32 @@ export const useOrderCreation = () => {
       return;
     }
 
+    // Получаем locationId из авторизации
+    const locationId = getCurrentLocationId();
+    if (!locationId) {
+      onError?.({ message: 'Не удалось определить локацию пользователя' });
+      return;
+    }
+
+    // Дополнительное логирование для отладки
+    console.log('🔍 Debug info:', {
+      userId,
+      locationId,
+      tableId,
+      orderType: formData.orderType,
+      cartItemsCount: cartItems.length
+    });
+
+    // Проверяем, что tableId соответствует локации
+    if (tableId) {
+      console.log('🔍 Table validation:', {
+        tableId,
+        locationId,
+        tableIdType: typeof tableId,
+        locationIdType: typeof locationId
+      });
+    }
+
     // Валидация формы
     if (!formData.customerName.trim()) {
       onError?.({ message: 'Введите имя клиента' });
@@ -60,9 +86,17 @@ export const useOrderCreation = () => {
       return;
     }
 
+    // Проверяем, что у всех товаров есть menuItemId
+    const itemsWithoutMenuItemId = cartItems.filter(item => !item.menuItemId);
+    if (itemsWithoutMenuItemId.length > 0) {
+      console.error('Items without menuItemId:', itemsWithoutMenuItemId);
+      onError?.({ message: 'Некоторые товары не имеют ID меню' });
+      return;
+    }
+
     // Создание данных заказа согласно бэкенду
     const orderData: CreateOrderFromCart = {
-      locationId: "2", // Используем ID из примера
+      locationId: locationId, // Используем locationId из авторизации
       tableId: tableId || undefined,
       orderType: formData.orderType,
       waiterId: userId,
@@ -71,11 +105,14 @@ export const useOrderCreation = () => {
       guestCount: formData.guestCount,
       notes: formData.notes.trim() || 'Заказ через POS систему',
       items: cartItems.map(item => ({
-        menuItemId: item.menuItemId || item.id.toString(),
+        menuItemId: item.menuItemId!, // Уже проверили выше
         quantity: item.quantity,
         specialInstructions: formData.notes.trim() || undefined
       }))
     };
+
+    // Логируем данные заказа для отладки
+    console.log('Creating order with data:', orderData);
 
     // Отправка заказа
     createOrderFromCart(orderData, {
@@ -85,10 +122,14 @@ export const useOrderCreation = () => {
       },
       onError: (error) => {
         console.error('Failed to create order:', error);
+        // Добавляем детальную информацию об ошибке
+        if (error.response?.data) {
+          console.error('Error response data:', error.response.data);
+        }
         onError?.(error);
       }
     });
-  }, [createOrderFromCart, getCurrentUserId]);
+  }, [createOrderFromCart, getCurrentUserId, getCurrentLocationId]);
 
   return {
     createOrder,
