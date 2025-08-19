@@ -1,19 +1,28 @@
 import { api } from '@/shared/api/axios';
 
 // Типы для API
+// Обновляем интерфейс Product чтобы он соответствовал MenuItem
 export interface Product {
   id: string;
   name: string;
   description?: string;
-  price: number;
+  price: string; // Бэкенд возвращает строку
   category_id: string;
   is_available: boolean;
   image_url?: string;
+  // Дополнительные поля из MenuItem
+  cost_price?: string;
+  cooking_time?: number;
+  calories?: number;
+  is_active?: boolean;
+  location_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Category {
   id: string;
-  name: string;
+  name: string; 
   description?: string;
 }
 
@@ -43,11 +52,13 @@ export interface CreateOrderDto {
   customerPhone?: string;
   guestCount?: number;
   notes?: string;
-  items: {
-    menuItemId: string;
-    quantity: number;
-    specialInstructions?: string;
-  }[];
+  // ❌ УБРАТЬ items - их нет в CreateOrderDto бэкенда!
+}
+
+export interface CreateOrderItemDto {
+  menuItemId: string;
+  quantity: number;
+  specialInstructions?: string;
 }
 
 // POS API сервис
@@ -73,7 +84,14 @@ export const posService = {
 
   // Создание заказа
   async createOrder(orderData: CreateOrderDto) {
+    // Отправляем только основные данные заказа
     const response = await api.post('/orders', orderData);
+    return response.data;
+  },
+
+  // Добавление позиции к заказу
+  async addOrderItem(orderId: string, itemData: CreateOrderItemDto) {
+    const response = await api.post(`/orders/${orderId}/items`, itemData);
     return response.data;
   },
 
@@ -101,7 +119,11 @@ export const cartUtils = {
     if (existingItem) {
       return cart.map(item =>
         item.product.id === product.id
-          ? { ...item, quantity: item.quantity + quantity, total: (item.quantity + quantity) * item.price }
+          ? { 
+              ...item, 
+              quantity: item.quantity + quantity, 
+              total: (item.quantity + quantity) * parseFloat(item.product.price) 
+            }
           : item
       );
     } else {
@@ -109,8 +131,8 @@ export const cartUtils = {
         id: `${product.id}-${Date.now()}`,
         product,
         quantity,
-        price: product.price,
-        total: product.price * quantity
+        price: parseFloat(product.price), // Конвертируем в число для расчетов
+        total: parseFloat(product.price) * quantity
       };
       return [...cart, newItem];
     }
@@ -124,7 +146,7 @@ export const cartUtils = {
     
     return cart.map(item =>
       item.id === itemId
-        ? { ...item, quantity, total: item.price * quantity }
+        ? { ...item, quantity, total: parseFloat(item.product.price) * quantity }
         : item
     );
   },

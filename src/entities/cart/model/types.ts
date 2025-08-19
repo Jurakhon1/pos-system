@@ -1,9 +1,10 @@
 export interface CartItem {
-  id: number;
+  id: number | string;
   name: string;
   price: string | number;
   quantity: number;
   imageUrl?: string;
+  menuItemId?: string; // ID блюда из меню для бэкенда
 }
 
 export interface CartState {

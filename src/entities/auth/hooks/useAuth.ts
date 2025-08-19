@@ -30,6 +30,7 @@ export const useAuth = () => {
     onSuccess: (data) => {
       // Сохраняем токен в localStorage
       localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("locationId", data.user.locationId);
       
       // Также сохраняем в cookies для middleware
       document.cookie = `token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 дней
@@ -39,6 +40,15 @@ export const useAuth = () => {
         const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
         if (payload.sub) {
           localStorage.setItem("userId", payload.sub.toString());
+      localStorage.setItem("location", data.locationId.toString())
+        localStorage.setItem("locationId", data.user.locationId);
+        localStorage.setItem("role", data.user.role);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("email", data.user.email);
+        localStorage.setItem("firstName", data.user.firstName); 
+        localStorage.setItem("lastName", data.user.lastName);
+
         }
       } catch (error) {
         console.error("Failed to decode JWT token:", error);

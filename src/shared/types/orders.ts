@@ -22,23 +22,32 @@ export interface OrderItem {
   price: string | number;
 }
 
+// Обновленные типы для соответствия бэкенду
 export interface CreateOrder {
-  cashierId: number;
-  items: {
-    productId: number;
-    quantity: number;
-  }[];
-  total: number;
+  locationId: string;
+  tableId?: string;
+  orderType: 'dine_in' | 'takeaway';
+  waiterId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  guestCount?: number;
+  notes?: string;
 }
 
 export interface CreateOrderFromCart {
-  cashierId: number;
+  locationId: string;
+  tableId?: string;
+  orderType: 'dine_in' | 'takeaway';
+  waiterId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  guestCount?: number;
+  notes?: string;
   items: {
-    productId: number;
+    menuItemId: string;
     quantity: number;
+    specialInstructions?: string;
   }[];
-  total?: number;
-  table?: number; // Номер стола (заглушка)
 }
 
 // Дополнительные типы для работы с заказами

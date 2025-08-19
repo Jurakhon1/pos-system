@@ -5,7 +5,7 @@ export const useCart = () => {
   const [items, setItems] = useState<CartItem[]>([]);
 
   // Добавить товар в корзину
-  const addToCart = useCallback((product: { id?: number; name: string; price: string | number; imageUrl?: string }) => {
+  const addToCart = useCallback((product: { id?: number | string; name: string; price: string | number; imageUrl?: string; menuItemId?: string }) => {
     if (!product.id) return;
     
     setItems((prevItems) => {
@@ -22,13 +22,14 @@ export const useCart = () => {
         name: product.name, 
         price: Number(product.price), 
         quantity: 1,
-        imageUrl: product.imageUrl
+        imageUrl: product.imageUrl,
+        menuItemId: product.menuItemId || product.id.toString()
       }];
     });
   }, []);
 
   // Обновить количество товара
-  const updateQuantity = useCallback((id: number, change: number) => {
+  const updateQuantity = useCallback((id: number | string, change: number) => {
     setItems((prevItems) => {
       return prevItems
         .map((item) => {
@@ -43,7 +44,7 @@ export const useCart = () => {
   }, []);
 
   // Удалить товар из корзины
-  const removeFromCart = useCallback((id: number) => {
+  const removeFromCart = useCallback((id: number | string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   }, []);
 

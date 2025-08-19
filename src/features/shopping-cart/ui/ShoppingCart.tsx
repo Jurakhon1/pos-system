@@ -10,8 +10,8 @@ interface ShoppingCartProps {
   items: CartItem[];
   total: number;
   selectedTable: number | null;
-  onUpdateQuantity: (id: number, change: number) => void;
-  onRemoveItem: (id: number) => void;
+  onUpdateQuantity: (id: number | string, change: number) => void;
+  onRemoveItem: (id: number | string) => void;
   onClearCart: () => void;
   onCheckout: () => void;
   onTableSelect: (tableNumber: number) => void;

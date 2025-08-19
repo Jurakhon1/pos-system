@@ -4,13 +4,22 @@ import { useAuth } from '@/entities/auth/hooks/useAuth';
 import { CreateOrderFromCart } from '@/shared/types/orders';
 import { CartItem } from '@/entities/cart';
 
+export interface OrderFormData {
+  customerName: string;
+  customerPhone: string;
+  guestCount: number;
+  notes: string;
+  orderType: 'dine_in' | 'takeaway';
+}
+
 export const useOrderCreation = () => {
   const { createOrderFromCart, isCreatingFromCart } = useOrders();
   const { getCurrentUserId } = useAuth();
 
   const createOrder = useCallback((
     cartItems: CartItem[],
-    tableNumber?: number | null,
+    tableId: string | null,
+    formData: OrderFormData,
     onSuccess?: (data: any) => void,
     onError?: (error: any) => void
   ) => {
@@ -34,18 +43,38 @@ export const useOrderCreation = () => {
       return;
     }
 
-    // Вычисление общей суммы
-    const total = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    // Валидация формы
+    if (!formData.customerName.trim()) {
+      onError?.({ message: 'Введите имя клиента' });
+      return;
+    }
 
-    // Создание данных заказа
+    if (!formData.customerPhone.trim()) {
+      onError?.({ message: 'Введите телефон клиента' });
+      return;
+    }
+
+    // Валидация стола для заказов в ресторане
+    if (formData.orderType === 'dine_in' && !tableId) {
+      onError?.({ message: 'Выберите номер стола' });
+      return;
+    }
+
+    // Создание данных заказа согласно бэкенду
     const orderData: CreateOrderFromCart = {
-      cashierId: parseInt(userId),
+      locationId: "2", // Используем ID из примера
+      tableId: tableId || undefined,
+      orderType: formData.orderType,
+      waiterId: userId,
+      customerName: formData.customerName.trim(),
+      customerPhone: formData.customerPhone.trim(),
+      guestCount: formData.guestCount,
+      notes: formData.notes.trim() || 'Заказ через POS систему',
       items: cartItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity
-      })),
-      total: total,
-      table: tableNumber || undefined
+        menuItemId: item.menuItemId || item.id.toString(),
+        quantity: item.quantity,
+        specialInstructions: formData.notes.trim() || undefined
+      }))
     };
 
     // Отправка заказа

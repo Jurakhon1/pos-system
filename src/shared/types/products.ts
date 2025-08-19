@@ -8,4 +8,5 @@ export interface Products {
     name: string;
   };
   imageUrl?: string;
+  menuItemId?: string; // ID блюда из меню для бэкенда
 }
