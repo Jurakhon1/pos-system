@@ -27,7 +27,7 @@ export default function OrdersPage() {
 
   // Фильтрация заказов
   const filteredOrders = orders?.filter((order: Orders) => {
-    const matchesSearch = order.items.some(item => 
+    const matchesSearch = order.items?.some(item => 
       item.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.cashier.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.id.toString().includes(searchQuery)
@@ -46,8 +46,8 @@ export default function OrdersPage() {
       case "status":
         return a.status.localeCompare(b.status);
       case "total":
-        const totalA = a.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-        const totalB = b.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+        const totalA = a.items.reduce((sum: number, item: any) => sum + Number(item.price) * item.quantity, 0);
+        const totalB = b.items.reduce((sum: number, item: any) => sum + Number(item.price) * item.quantity, 0);
         return totalB - totalA;
       default:
         return 0;
@@ -56,7 +56,7 @@ export default function OrdersPage() {
 
   // Вычисление общей суммы заказа
   const calculateOrderTotal = (order: Orders) => {
-    return order.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    return order.items.reduce((sum: number, item: any) => sum + Number(item.price) * item.quantity, 0);
   };
 
   // Получение статуса заказа
@@ -218,7 +218,7 @@ export default function OrdersPage() {
                     <div className="lg:col-span-2">
                       <h4 className="font-medium text-gray-900 mb-3">Товары:</h4>
                       <div className="space-y-2">
-                        {order.items.map((item) => (
+                        {order.items.map((item: any) => (
                           <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center">
@@ -263,7 +263,7 @@ export default function OrdersPage() {
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>Показано заказов: {sortedOrders.length}</span>
               <span>
-                Общая сумма: ₽{sortedOrders.reduce((sum, order) => sum + calculateOrderTotal(order), 0).toFixed(2)}
+                Общая сумма: ₽{sortedOrders.reduce((sum: number, order: Orders) => sum + calculateOrderTotal(order), 0).toFixed(2)}
               </span>
             </div>
           </CardContent>
