@@ -15,8 +15,8 @@ interface OrderFormData {
 }
 
 interface OrderFormProps {
-  selectedTable: number | null;
-  onTableSelect: (tableNumber: number) => void;
+  selectedTable: string | null;
+  onTableSelect: (tableId: string) => void;
   onTableClear: () => void;
   onSubmit: (formData: OrderFormData) => void;
   isSubmitting: boolean;
@@ -83,35 +83,13 @@ export const OrderForm = ({
             <label className="text-sm font-medium text-gray-700">
               Номер стола
             </label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((tableNum) => (
-                <Button
-                  key={tableNum}
-                  type="button"
-                  variant={selectedTable === tableNum ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onTableSelect(tableNum)}
-                  className="w-12 h-10"
-                >
-                  {tableNum}
-                </Button>
-              ))}
-              {selectedTable && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={onTableClear}
-                  className="w-12 h-10"
-                >
-                  ✕
-                </Button>
-              )}
+            <div className="text-sm text-gray-500">
+              {selectedTable ? `Выбран стол: ${selectedTable}` : 'Стол не выбран'}
             </div>
-            {selectedTable && (
-              <p className="text-sm text-green-600">
-                Выбран стол: {selectedTable}
-              </p>
+            {!selectedTable && (
+              <div className="text-sm text-red-500">
+                Для заказа в ресторане необходимо выбрать стол
+              </div>
             )}
           </div>
         )}
@@ -186,7 +164,7 @@ export const OrderForm = ({
         <Button
           type="submit"
           className="w-full bg-green-500 hover:bg-green-600 text-white"
-          disabled={isSubmitting || !formData.customerName || !formData.customerPhone}
+          disabled={isSubmitting || !formData.customerName || !formData.customerPhone || (formData.orderType === 'dine_in' && !selectedTable)}
         >
           {isSubmitting ? 'Создание заказа...' : 'Создать заказ'}
         </Button>

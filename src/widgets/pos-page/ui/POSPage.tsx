@@ -3,15 +3,19 @@
 import { useState } from "react";
 import { ProductCatalogComponent } from "@/features/product-catalog/ui/ProductCatalog";
 import { ShoppingCartComponent } from "@/features/shopping-cart/ui/ShoppingCart";
+import { OrderForm } from "@/features/order-creation/ui/OrderForm";
 import { AnimatedNotification } from "@/features/notification";
 import { useProducts } from "@/entities/product";
 import { useCategories } from "@/entities/categories/hooks/useCategories";
 import { useCart } from "@/entities/cart/hooks/useCart";
 import { useOrderCreation } from "@/features/order-creation/hooks/useOrderCreation";
 import { Products } from "@/shared/types/products";
+import { OrderFormData } from "@/features/order-creation/hooks/useOrderCreation";
+
 export const POSPageComponent = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [selectedTable, setSelectedTable] = useState<number | null>(null);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [showOrderForm, setShowOrderForm] = useState(false);
 
   // API hooks
   const { products, isLoading: productsLoading, error: productsError } = useProducts();
@@ -31,14 +35,16 @@ export const POSPageComponent = () => {
   const { createOrder, isCreating } = useOrderCreation();
 
   // Обработка создания заказа
-  const handleCreateOrder = () => {
+  const handleCreateOrder = (formData: OrderFormData) => {
     createOrder(
       items,
       selectedTable,
+      formData,
       (data) => {
         // Успешное создание заказа
         clearCart();
         setSelectedTable(null); // Сброс выбранного стола
+        setShowOrderForm(false); // Скрываем форму
         setNotification({ type: 'success', message: 'Заказ успешно создан!' });
         setTimeout(() => setNotification(null), 3000);
       },
@@ -53,6 +59,16 @@ export const POSPageComponent = () => {
   // Обработка добавления товара в корзину
   const handleAddToCart = (product: Products) => {
     addToCart(product);
+  };
+
+  // Обработка нажатия на кнопку оформления заказа
+  const handleCheckoutClick = () => {
+    if (items.length === 0) {
+      setNotification({ type: 'error', message: 'Корзина пуста' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+    setShowOrderForm(true);
   };
 
   // Состояния загрузки и ошибок
@@ -81,6 +97,31 @@ export const POSPageComponent = () => {
           >
             Попробовать снова
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Показываем форму заказа поверх основного интерфейса
+  if (showOrderForm) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <OrderForm
+            selectedTable={selectedTable}
+            onTableSelect={(tableId) => setSelectedTable(tableId)}
+            onTableClear={() => setSelectedTable(null)}
+            onSubmit={handleCreateOrder}
+            isSubmitting={isCreating}
+          />
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setShowOrderForm(false)}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Вернуться к POS
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -117,7 +158,7 @@ export const POSPageComponent = () => {
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeFromCart}
             onClearCart={clearCart}
-            onCheckout={handleCreateOrder}
+            onCheckout={handleCheckoutClick}
             onTableSelect={setSelectedTable}
             onTableClear={() => setSelectedTable(null)}
             isCheckoutLoading={isCreating}

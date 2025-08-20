@@ -23,33 +23,45 @@ export const useAuth = () => {
     return localStorage.getItem("userId");
   };
 
-
+  const getCurrentLocationId = () => {
+    const locationId = localStorage.getItem("locationId");
+    console.log('🔍 getCurrentLocationId called, result:', locationId);
+    return locationId;
+  };
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
       // Сохраняем токен в localStorage
       localStorage.setItem("token", data.accessToken);
-      localStorage.setItem("locationId", data.user.locationId);
       
       // Также сохраняем в cookies для middleware
       document.cookie = `token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 дней
       
-      // Сохраняем ID пользователя из JWT токена
+      // Сохраняем ID пользователя и location_id из JWT токена
       try {
         const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+        console.log('JWT payload:', payload);
+        
         if (payload.sub) {
           localStorage.setItem("userId", payload.sub.toString());
-      localStorage.setItem("location", data.locationId.toString())
-        localStorage.setItem("locationId", data.user.locationId);
-        localStorage.setItem("role", data.user.role);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("username", data.user.username);
-        localStorage.setItem("email", data.user.email);
-        localStorage.setItem("firstName", data.user.firstName); 
-        localStorage.setItem("lastName", data.user.lastName);
-
         }
+        
+        if (payload.location_id) {
+          localStorage.setItem("locationId", payload.location_id.toString());
+        }
+        
+        // Сохраняем дополнительные данные пользователя
+        if (data.user) {
+          localStorage.setItem("role", data.user.role || '');
+          localStorage.setItem("username", data.user.username || '');
+          localStorage.setItem("email", data.user.email || '');
+          localStorage.setItem("firstName", data.user.first_name || '');
+          localStorage.setItem("lastName", data.user.last_name || '');
+        }
+        
+        localStorage.setItem("refreshToken", data.refreshToken || '');
+        
       } catch (error) {
         console.error("Failed to decode JWT token:", error);
       }
@@ -84,6 +96,13 @@ export const useAuth = () => {
     
     // Удаляем ID пользователя из localStorage
     localStorage.removeItem("userId");
+    localStorage.removeItem("locationId");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    localStorage.removeItem("firstName");
+    localStorage.removeItem("lastName");
+    localStorage.removeItem("refreshToken");
     
     // Удаляем токен из cookies
     document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -101,7 +120,8 @@ export const useAuth = () => {
     logout,
     isAuthenticated,
     getCurrentUserId,
-    isLoading: loginMutation.isPending || registerMutation.isPending,
-    error: loginMutation.error || registerMutation.error,
+    getCurrentLocationId,
+    isLoading: loginMutation.isPending,
+    isRegistering: registerMutation.isPending,
   };
 };

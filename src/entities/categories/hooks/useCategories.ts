@@ -1,10 +1,18 @@
+<<<<<<< HEAD
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CategoriesApi, Category, CreateCategoryDto, UpdateCategoryDto } from "../api/categoriesApi";
 import { toast } from "sonner";
+=======
+import { useQuery } from "@tanstack/react-query";
+import { categoriesApi } from "../api/categoriesApi";
+import { useAuth } from "@/entities/auth/hooks/useAuth";
+>>>>>>> 0c841d24fcc77d93f82c54b7dfabc06c592da811
 
 export const useCategories = () => {
-  const queryClient = useQueryClient();
+  const { getCurrentLocationId } = useAuth();
+  const locationId = getCurrentLocationId();
 
+<<<<<<< HEAD
   // Получить все категории
   const {
     data: categories = [],
@@ -65,6 +73,12 @@ export const useCategories = () => {
     onError: (error: any) => {
       toast.error(`Ошибка при изменении статуса: ${error.message}`);
     },
+=======
+  const { data: categories, isLoading, error } = useQuery({
+    queryKey: ["categories", locationId],
+    queryFn: () => categoriesApi.getCategories(locationId),
+    enabled: !!locationId, // Запрос выполняется только если есть locationId
+>>>>>>> 0c841d24fcc77d93f82c54b7dfabc06c592da811
   });
 
   return {
@@ -72,6 +86,7 @@ export const useCategories = () => {
     categories,
     isLoading,
     error,
+<<<<<<< HEAD
     refetch,
 
     // Мутации
@@ -91,6 +106,8 @@ export const useCategories = () => {
     updateError: updateCategoryMutation.error,
     deleteError: deleteCategoryMutation.error,
     toggleError: toggleActiveMutation.error,
+=======
+>>>>>>> 0c841d24fcc77d93f82c54b7dfabc06c592da811
   };
 };
 

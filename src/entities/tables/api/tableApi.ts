@@ -26,9 +26,24 @@ interface UpdateTableDto {
 
 export const tableApi = {
   // Получить все столы
-  async getTables() {
-    const { data } = await api.get<Table[]>('/tables');
-    return data;
+  async getTables(locationId?: string) {
+    const params = new URLSearchParams();
+    if (locationId) {
+      params.append('locationId', locationId);
+    }
+    
+    const url = `/tables?${params.toString()}`;
+    console.log('🔍 API Tables URL:', url);
+    console.log('🔍 LocationId parameter:', locationId);
+    
+    try {
+      const { data } = await api.get<Table[]>(url);
+      console.log('✅ Tables API response:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Tables API error:', error);
+      throw error;
+    }
   },
 
   // Получить стол по ID
