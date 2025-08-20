@@ -32,3 +32,4 @@ HAVING COUNT(*) > 1;
 
 -- 5. Проверяем результат
 SHOW INDEX FROM orders WHERE Key_name = 'idx_order_number_unique';
+

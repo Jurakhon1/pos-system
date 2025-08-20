@@ -102,3 +102,4 @@ SELECT
   COUNT(CASE WHEN tax_amount IS NULL THEN 1 END) as null_tax,
   COUNT(CASE WHEN total_amount IS NULL THEN 1 END) as null_total
 FROM orders;
+
