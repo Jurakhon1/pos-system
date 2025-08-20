@@ -82,8 +82,6 @@ export default function KitchenPage() {
     fetchOrders();
   }, []);
 
-  // Auto-refresh every 30 seconds to keep kitchen display up-to-date
-  // This ensures chefs see new orders and status changes in real-time
   useEffect(() => {
     const interval = setInterval(() => {
       fetchOrders();
@@ -267,64 +265,11 @@ export default function KitchenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-blue-">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                <Package className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Кухня</h1>
-                <p className="text-sm text-gray-600">Управление заказами и приготовлением</p>
-                {lastUpdated && (
-                  <p className="text-xs text-gray-500">
-                    Обновлено: {lastUpdated.toLocaleTimeString('ru-RU')}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`w-2 h-2 rounded-full ${error ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                  <span className="text-xs text-gray-500">
-                    {error ? 'Ошибка подключения' : 'Подключено к серверу'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="border-gray-200 hover:bg-gray-50"
-              >
-                <Loader2 className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Обновить
-              </Button>
-              
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 px-2"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-8 px-2"
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+         
         </div>
       </div>
 
@@ -356,70 +301,7 @@ export default function KitchenPage() {
         </div>
       )}
 
-      {/* Filters and Search */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Поиск по номеру заказа, клиенту или блюду..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex gap-2">
-              <Button
-                variant={statusFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('all')}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                Все ({orders.length})
-              </Button>
-              <Button
-                variant={statusFilter === 'pending' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('pending')}
-                className="bg-yellow-600 hover:bg-yellow-700"
-              >
-                Ожидает ({orders.filter(o => o.status === 'pending').length})
-              </Button>
-              <Button
-                variant={statusFilter === 'confirmed' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('confirmed')}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Подтвержден ({orders.filter(o => o.status === 'confirmed').length})
-              </Button>
-              <Button
-                variant={statusFilter === 'cooking' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('cooking')}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                Готовится ({orders.filter(o => o.status === 'cooking').length})
-              </Button>
-              <Button
-                variant={statusFilter === 'ready' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('ready')}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Готово ({orders.filter(o => o.status === 'ready').length})
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+     
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -569,12 +451,7 @@ export default function KitchenPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    {/* Note: Order status changes are now handled through individual item actions */}
-                    <div className="text-sm text-gray-500 italic">
-                      Используйте кнопки "Готовить" и "Готово" для каждого блюда
-                    </div>
-                  </div>
+                  
                 </CardContent>
               </Card>
             ))}
