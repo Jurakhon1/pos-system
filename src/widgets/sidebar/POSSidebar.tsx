@@ -51,11 +51,11 @@ export default function POSSidebar({ className }: POSSidebarProps) {
       icon: Receipt,
       label: "Заказы"
     },
-    {
-      href: "/sales",
-      icon: ShoppingCart,
-      label: "Продажи"
-    },
+    // {
+    //   href: "/sales",
+    //   icon: ShoppingCart,
+    //   label: "Продажи"
+    // },
     {
       href: "/kitchen",
       icon: Utensils,
