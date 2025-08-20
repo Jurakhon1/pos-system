@@ -30,8 +30,55 @@ export const useOrders = () => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: "pending" | "in_progress" | "done" | "canceled" }) =>
+    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
       OrdersApi.updateOrderStatus(orderId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: (orderId: string) => OrdersApi.deleteOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const updateOrderMutation = useMutation({
+    mutationFn: ({ orderId, orderData }: { orderId: string; orderData: Partial<CreateOrder> }) =>
+      OrdersApi.updateOrder(orderId, orderData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const addOrderItemMutation = useMutation({
+    mutationFn: ({ orderId, itemData }: { orderId: string; itemData: { menuItemId: string; quantity: number; specialInstructions?: string } }) =>
+      OrdersApi.addOrderItem(orderId, itemData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const removeOrderItemMutation = useMutation({
+    mutationFn: ({ orderId, itemId }: { orderId: string; itemId: string }) =>
+      OrdersApi.removeOrderItem(orderId, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const updateOrderItemMutation = useMutation({
+    mutationFn: ({ orderId, itemId, itemData }: { orderId: string; itemId: string; itemData: { quantity?: number; specialInstructions?: string } }) =>
+      OrdersApi.updateOrderItem(orderId, itemId, itemData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const processPaymentMutation = useMutation({
+    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: { paymentMethod: 'cash' | 'card' | 'mixed'; cashAmount?: number; cardAmount?: number; discountAmount?: number } }) =>
+      OrdersApi.processPayment(orderId, paymentData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -45,9 +92,21 @@ export const useOrders = () => {
     createOrder: createOrderMutation.mutate,
     createOrderFromCart: createOrderFromCartMutation.mutate,
     updateOrderStatus: updateOrderStatusMutation.mutate,
+    deleteOrder: deleteOrderMutation.mutate,
+    updateOrder: updateOrderMutation.mutate,
+    addOrderItem: addOrderItemMutation.mutate,
+    removeOrderItem: removeOrderItemMutation.mutate,
+    updateOrderItem: updateOrderItemMutation.mutate,
+    processPayment: processPaymentMutation.mutate,
     isCreating: createOrderMutation.isPending,
     isCreatingFromCart: createOrderFromCartMutation.isPending,
     isUpdatingStatus: updateOrderStatusMutation.isPending,
+    isDeleting: deleteOrderMutation.isPending,
+    isUpdating: updateOrderMutation.isPending,
+    isAddingItem: addOrderItemMutation.isPending,
+    isRemovingItem: removeOrderItemMutation.isPending,
+    isUpdatingItem: updateOrderItemMutation.isPending,
+    isProcessingPayment: processPaymentMutation.isPending,
   };
 };
 
@@ -66,7 +125,7 @@ export const useOrder = (orderId: string) => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: (status: "pending" | "in_progress" | "done" | "canceled") =>
+    mutationFn: (status: string) =>
       OrdersApi.updateOrderStatus(orderId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });

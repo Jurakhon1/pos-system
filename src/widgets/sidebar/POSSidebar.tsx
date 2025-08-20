@@ -10,7 +10,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   Receipt,
-  LogOut
+  LogOut,
+  Shield
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
@@ -69,6 +70,11 @@ export default function POSSidebar({ className }: POSSidebarProps) {
       href: "/settings",
       icon: Settings,
       label: "Настройки"
+    },
+    {
+      href: "/admin",
+      icon: Shield,
+      label: "Админ панель"
     }
   ]
 

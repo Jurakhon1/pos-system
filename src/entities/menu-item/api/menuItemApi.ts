@@ -1,5 +1,5 @@
 import api from "@/shared/api/axios";
-import { MenuItem } from "@/shared/types/menu-items";
+import { MenuItem } from "@/shared/types/menu";
 
 export const menuItemApi = {
   getMenuItems: async () => {
@@ -18,12 +18,22 @@ export const menuItemApi = {
   },
 
   updateMenuItem: async (menuItemId: string, menuItemData: Partial<MenuItem>) => {
-    const response = await api.put(`/menu/items/${menuItemId}`, menuItemData);
+    const response = await api.patch(`/menu/items/${menuItemId}`, menuItemData);
     return response.data;
   },
 
   deleteMenuItem: async (menuItemId: string) => {
     const response = await api.delete(`/menu/items/${menuItemId}`);
+    return response.data;
+  },
+
+  toggleActive: async (menuItemId: string) => {
+    const response = await api.put(`/menu/items/${menuItemId}/toggle-active`);
+    return response.data;
+  },
+
+  toggleAvailable: async (menuItemId: string) => {
+    const response = await api.put(`/menu/items/${menuItemId}/toggle-available`);
     return response.data;
   }
 };

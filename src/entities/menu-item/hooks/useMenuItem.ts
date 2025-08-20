@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { menuItemApi } from "../api/menuItemApi";
-import { MenuItem } from "@/shared/types/menu-items";
+import { MenuItem } from "@/shared/types/menu";
 
 export const useMenuItems = () => {
   const queryClient = useQueryClient();
@@ -37,6 +37,20 @@ export const useMenuItems = () => {
     },
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: (menuItemId: string) => menuItemApi.toggleActive(menuItemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menuItems"] });
+    },
+  });
+
+  const toggleAvailableMutation = useMutation({
+    mutationFn: (menuItemId: string) => menuItemApi.toggleAvailable(menuItemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menuItems"] });
+    },
+  });
+
   return {
     menuItems,
     isLoading,
@@ -45,9 +59,13 @@ export const useMenuItems = () => {
     createMenuItem: createMenuItemMutation.mutate,
     updateMenuItem: updateMenuItemMutation.mutate,
     deleteMenuItem: deleteMenuItemMutation.mutate,
+    toggleActive: toggleActiveMutation.mutate,
+    toggleAvailable: toggleAvailableMutation.mutate,
     isCreating: createMenuItemMutation.isPending,
     isUpdating: updateMenuItemMutation.isPending,
     isDeleting: deleteMenuItemMutation.isPending,
+    isTogglingActive: toggleActiveMutation.isPending,
+    isTogglingAvailable: toggleAvailableMutation.isPending,
   };
 };
 
