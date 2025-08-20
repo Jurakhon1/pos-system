@@ -1,93 +1,105 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { categoriesApi } from "../api/categoriesApi";
-import { Category } from "@/shared/types/categories";
+import { CategoriesApi, Category, CreateCategoryDto, UpdateCategoryDto } from "../api/categoriesApi";
+import { toast } from "sonner";
 
 export const useCategories = () => {
   const queryClient = useQueryClient();
 
+  // Получить все категории
   const {
-    data: categories,
+    data: categories = [],
     isLoading,
     error,
-    refetch,
+    refetch
   } = useQuery({
     queryKey: ["categories"],
-    queryFn: categoriesApi.getCategories,
+    queryFn: CategoriesApi.getAll,
+    staleTime: 5 * 60 * 1000, // 5 минут
   });
 
+  // Создать категорию
   const createCategoryMutation = useMutation({
-    mutationFn: (categoryData: Category) => categoriesApi.createCategory(categoryData),
+    mutationFn: (data: CreateCategoryDto) => CategoriesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Категория успешно создана");
+    },
+    onError: (error: any) => {
+      toast.error(`Ошибка при создании категории: ${error.message}`);
     },
   });
 
+  // Обновить категорию
   const updateCategoryMutation = useMutation({
-    mutationFn: ({ categoryId, categoryData }: { categoryId: string; categoryData: Partial<Category> }) =>
-      categoriesApi.updateCategory(categoryId, categoryData),
+    mutationFn: ({ id, data }: { id: string; data: UpdateCategoryDto }) =>
+      CategoriesApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Категория успешно обновлена");
+    },
+    onError: (error: any) => {
+      toast.error(`Ошибка при обновлении категории: ${error.message}`);
     },
   });
 
+  // Удалить категорию
   const deleteCategoryMutation = useMutation({
-    mutationFn: (categoryId: string) => categoriesApi.deleteCategory(categoryId),
+    mutationFn: (id: string) => CategoriesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Категория успешно удалена");
+    },
+    onError: (error: any) => {
+      toast.error(`Ошибка при удалении категории: ${error.message}`);
+    },
+  });
+
+  // Изменить статус активности
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      CategoriesApi.toggleActive(id, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Статус категории изменен");
+    },
+    onError: (error: any) => {
+      toast.error(`Ошибка при изменении статуса: ${error.message}`);
     },
   });
 
   return {
+    // Данные
     categories,
     isLoading,
     error,
     refetch,
+
+    // Мутации
     createCategory: createCategoryMutation.mutate,
     updateCategory: updateCategoryMutation.mutate,
     deleteCategory: deleteCategoryMutation.mutate,
+    toggleActive: toggleActiveMutation.mutate,
+
+    // Состояния загрузки
     isCreating: createCategoryMutation.isPending,
     isUpdating: updateCategoryMutation.isPending,
     isDeleting: deleteCategoryMutation.isPending,
+    isToggling: toggleActiveMutation.isPending,
+
+    // Обработчики ошибок
+    createError: createCategoryMutation.error,
+    updateError: updateCategoryMutation.error,
+    deleteError: deleteCategoryMutation.error,
+    toggleError: toggleActiveMutation.error,
   };
 };
 
-export const useCategory = (categoryId: string) => {
-  const queryClient = useQueryClient();
-
-  const {
-    data: category,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["category", categoryId],
-    queryFn: () => categoriesApi.getCategoryById(categoryId),
-    enabled: !!categoryId,
+// Хук для получения одной категории по ID
+export const useCategory = (id: string) => {
+  return useQuery({
+    queryKey: ["categories", id],
+    queryFn: () => CategoriesApi.getById(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
-
-  const updateCategoryMutation = useMutation({
-    mutationFn: (categoryData: Partial<Category>) => categoriesApi.updateCategory(categoryId, categoryData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-  });
-
-  const deleteCategoryMutation = useMutation({
-    mutationFn: () => categoriesApi.deleteCategory(categoryId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-  });
-
-  return {
-    category,
-    isLoading,
-    error,
-    refetch,
-    updateCategory: updateCategoryMutation.mutate,
-    deleteCategory: deleteCategoryMutation.mutate,
-    isUpdating: updateCategoryMutation.isPending,
-    isDeleting: deleteCategoryMutation.isPending,
-  };
 };
