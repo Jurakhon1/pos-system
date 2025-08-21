@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  experimental: {
-    typedRoutes: true,
-  },
   /* config options here */
 };
 

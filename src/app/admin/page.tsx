@@ -15,9 +15,16 @@ import {
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
 import Link from "next/link";
+import type { UrlObject } from "url";
 
 export default function AdminPage() {
-  const adminFeatures = [
+  const adminFeatures: Array<{
+    title: string;
+    description: string;
+    icon: any;
+    href: string | UrlObject;
+    color: string;
+  }> = [
     {
       title: "Управление пользователями",
       description: "Создание, редактирование и удаление пользователей системы",
