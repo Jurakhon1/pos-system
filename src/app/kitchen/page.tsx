@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react";
-import { Order, OrderItem } from "@/shared/types/orders";
+import { useState } from "react";
+import { Order } from "@/shared/types/orders";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -27,7 +27,7 @@ const getStatusColor = (status: string) => {
     case 'pending':
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
     case 'confirmed':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800';
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-yellow-800';
     case 'cooking':
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800';
     case 'ready':
@@ -102,452 +102,230 @@ const getPriorityColor = (priority: string) => {
 
 export default function KitchenPage() {
   const { getCurrentUserId } = useAuth();
-  const {
-    orders,
-    isLoading: loading,
-    error,
-    refetch,
-    startCookingOrderItem,
-    markOrderItemReady,
-  } = useOrders();
+  const { orders, isLoading, error, startCookingOrderItem, markOrderItemReady } = useOrders();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"time" | "priority">("time");
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [autoRefresh, setAutoRefresh] = useState(true);
-
-  // Отладка: показываем все заказы для проверки данных
-  console.log('Kitchen orders:', orders);
-  
-  // Фильтруем заказы для кухни - показываем все активные заказы
-  const filteredOrders = (orders || []).filter((order: Order) => {
-    // Показываем заказы, которые не завершены полностью
-    const isNotCompleted = !['paid', 'cancelled'].includes(order.status);
+  // Фильтрация заказов
+  const filteredOrders = orders?.filter((order: Order) => {
+    const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.table?.number.toString().includes(searchTerm);
     
-    // Проверяем, есть ли позиции, которые нужно готовить
-    const hasItemsToProcess = order.orderItems && order.orderItems.length > 0;
-    
-    console.log(`Order ${order.order_number}: status=${order.status}, hasItems=${hasItemsToProcess}, isNotCompleted=${isNotCompleted}`);
-    
-    return isNotCompleted && hasItemsToProcess;
-  });
-
-  // Фильтрация по поиску и статусу
-  const finalFilteredOrders = filteredOrders.filter((order: Order) => {
-    const matchesSearch = 
-      order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.table?.number?.includes(searchQuery);
-    
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    const matchesStatus = selectedStatus === "all" || order.status === selectedStatus;
     
     return matchesSearch && matchesStatus;
+  }) || [];
+
+  // Сортировка заказов
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    if (sortBy === "time") {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else {
+      // Приоритет: urgent > high > normal > low
+      const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
+      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+      return bPriority - aPriority;
+    }
   });
 
-  // Отладка финальных заказов
-  console.log('Final filtered orders:', finalFilteredOrders);
-  
-  // Группировка заказов по статусу
-  const urgentOrders = finalFilteredOrders.filter((order: Order) => 
-          order.orderItems?.some((item: OrderItem) => item.status === 'pending')
-  );
-  const cookingOrders = finalFilteredOrders.filter((order: Order) => 
-          order.orderItems?.some((item: OrderItem) => item.status === 'cooking')
-  );
-  const confirmedOrders = finalFilteredOrders.filter((order: Order) => 
-          order.status === 'confirmed' || order.orderItems?.some((item: OrderItem) => item.status === 'pending')
-  );
-  
-  console.log('Urgent orders:', urgentOrders.length);
-  console.log('Cooking orders:', cookingOrders.length);
-  console.log('Confirmed orders:', confirmedOrders.length);
+  // Группировка заказов по приоритету
+  const urgentOrders = sortedOrders.filter(order => order.priority === 'urgent');
+  const highOrders = sortedOrders.filter(order => order.priority === 'high');
+  const normalOrders = sortedOrders.filter(order => order.priority === 'normal');
+  const lowOrders = sortedOrders.filter(order => order.priority === 'low');
 
-  const handleStartCookingItem = (orderId: string, itemId: string) => {
-    const cookId = getCurrentUserId();
-    if (cookId) {
-      startCookingOrderItem({ orderId, itemId, cookId });
+  const handleStartCooking = async (orderId: string, itemId: string) => {
+    try {
+      const cookId = getCurrentUserId();
+      if (cookId) {
+        startCookingOrderItem({ orderId, itemId, cookId });
+      }
+    } catch (error) {
+      console.error('Ошибка при изменении статуса:', error);
     }
   };
 
-  const handleMarkItemReady = (orderId: string, itemId: string) => {
-    markOrderItemReady({ orderId, itemId });
+  const handleMarkReady = async (orderId: string, itemId: string) => {
+    try {
+      markOrderItemReady({ orderId, itemId });
+    } catch (error) {
+      console.error('Ошибка при изменении статуса:', error);
+    }
   };
 
-  // Автообновление каждые 30 секунд
-  useEffect(() => {
-    if (!autoRefresh) return;
-    
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, refetch]);
-
-  // Статистика
-  const totalPendingItems = finalFilteredOrders.reduce((sum: number, order: Order) => 
-          sum + (order.orderItems?.filter((item: OrderItem) => item.status === 'pending').length || 0), 0
-  );
-  const totalCookingItems = finalFilteredOrders.reduce((sum: number, order: Order) => 
-          sum + (order.orderItems?.filter((item: OrderItem) => item.status === 'cooking').length || 0), 0
-  );
-  const totalReadyItems = finalFilteredOrders.reduce((sum: number, order: Order) => 
-          sum + (order.orderItems?.filter((item: OrderItem) => item.status === 'ready').length || 0), 0
-  );
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
-          <p className="text-muted-foreground">Загрузка кухни...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-red-600">Ошибка загрузки</h2>
+          <p className="text-gray-600">{error.message || 'Произошла ошибка при загрузке заказов'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <RoleGuard requiredRoles={[USER_ROLES.CHEF, USER_ROLES.COOK]}>
-      <div className="min-h-screen bg-background text-foreground">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <Package className="h-8 w-8" />
-                </div>
-                <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold">Кухня</h1>
-                  <p className="text-orange-100 text-lg">Управление заказами и приготовлением</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  Обновить
-                </Button>
-                
-                <Button
-                  variant={autoRefresh ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={autoRefresh ? "bg-white text-orange-600 hover:bg-white/90" : "bg-white/20 border-white/30 text-white hover:bg-white/30"}
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  {autoRefresh ? "Авто" : "Ручное"}
-                </Button>
-              </div>
-            </div>
+    <RoleGuard requiredRoles={[USER_ROLES.CHEF, USER_ROLES.COOK, USER_ROLES.ADMIN]}>
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Заголовок */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Кухня</h1>
+            <p className="text-muted-foreground">Управление заказами и приготовлением блюд</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Package className="w-6 h-6 text-primary" />
+            <span className="text-sm text-muted-foreground">
+              {orders?.length || 0} заказов
+            </span>
           </div>
         </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Error Display */}
-        {error && (
-          <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                <div className="flex-1">
-                  <p className="text-red-700 dark:text-red-300 font-medium">Ошибка загрузки заказов</p>
-                  <p className="text-red-600 dark:text-red-400 text-sm">{error.message}</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  Повторить
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-                {/* Statistics Cards - Only show when there are orders */}
-        {finalFilteredOrders.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {totalPendingItems > 0 && (
-              <Card className="border-border bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-yellow-100 dark:bg-yellow-950/20 rounded-lg">
-                      <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Ожидают</p>
-                      <p className="text-lg font-bold text-foreground">{totalPendingItems}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {totalCookingItems > 0 && (
-              <Card className="border-border bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-orange-100 dark:bg-orange-950/20 rounded-lg">
-                      <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Готовятся</p>
-                      <p className="text-lg font-bold text-foreground">{totalCookingItems}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {totalReadyItems > 0 && (
-              <Card className="border-border bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-green-100 dark:bg-green-950/20 rounded-lg">
-                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Готовы</p>
-                      <p className="text-lg font-bold text-foreground">{totalReadyItems}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="border-border bg-card/80 backdrop-blur-sm">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-100 dark:bg-blue-950/20 rounded-lg">
-                    <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Всего</p>
-                    <p className="text-lg font-bold text-foreground">{finalFilteredOrders.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Фильтры и поиск */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Поиск по номеру заказа, клиенту или столу..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        )}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
+          >
+            <option value="all">Все статусы</option>
+            <option value="pending">Ожидает</option>
+            <option value="confirmed">Подтвержден</option>
+            <option value="cooking">Готовится</option>
+            <option value="ready">Готов</option>
+            <option value="served">Подано</option>
+            <option value="paid">Оплачено</option>
+            <option value="cancelled">Отменено</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "time" | "priority")}
+            className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
+          >
+            <option value="time">По времени</option>
+            <option value="priority">По приоритету</option>
+          </select>
+        </div>
 
-        {/* Minimalistic Search - Only show when there are orders */}
-        {finalFilteredOrders.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Simple Search Bar */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Поиск заказов..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 border-border bg-background text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-border rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm bg-background text-foreground min-w-[120px]"
-            >
-              <option value="all">Все статусы</option>
-              <option value="pending">Ожидают</option>
-              <option value="confirmed">Подтверждены</option>
-              <option value="cooking">Готовятся</option>
-            </select>
-          </div>
-        )}
-
-        {/* Priority Sections */}
+        {/* Срочные заказы */}
         {urgentOrders.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <h2 className="text-xl font-bold text-foreground">Срочные заказы</h2>
-              <Badge variant="destructive" className="ml-2">{urgentOrders.length}</Badge>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {urgentOrders.map((order: Order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
+            <h2 className="text-xl font-semibold text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              СРОЧНЫЕ ЗАКАЗЫ ({urgentOrders.length})
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {urgentOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
                   priority="urgent"
-                  onStartCooking={handleStartCookingItem}
-                  onMarkReady={handleMarkItemReady}
+                  onStartCooking={handleStartCooking}
+                  onMarkReady={handleMarkReady}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {cookingOrders.length > 0 && (
+        {/* Высокий приоритет */}
+        {highOrders.length > 0 && (
           <div className="space-y-4">
-                         <div className="flex items-center gap-2">
-               <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-               <h2 className="text-xl font-bold text-foreground">Готовятся</h2>
-               <Badge variant="secondary" className="ml-2">{cookingOrders.length}</Badge>
-             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {cookingOrders.map((order: Order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
+            <h2 className="text-xl font-semibold text-orange-600 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              ВЫСОКИЙ ПРИОРИТЕТ ({highOrders.length})
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {highOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
                   priority="high"
-                  onStartCooking={handleStartCookingItem}
-                  onMarkReady={handleMarkItemReady}
+                  onStartCooking={handleStartCooking}
+                  onMarkReady={handleMarkReady}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {confirmedOrders.length > 0 && (
+        {/* Обычные заказы */}
+        {normalOrders.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-xl font-bold text-foreground">Подтверждены</h2>
-              <Badge variant="outline" className="ml-2">{confirmedOrders.length}</Badge>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {confirmedOrders.map((order: Order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
+            <h2 className="text-xl font-semibold text-blue-600 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              ОБЫЧНЫЕ ЗАКАЗЫ ({normalOrders.length})
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {normalOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
                   priority="normal"
-                  onStartCooking={handleStartCookingItem}
-                  onMarkReady={handleMarkItemReady}
+                  onStartCooking={handleStartCooking}
+                  onMarkReady={handleMarkReady}
                 />
               ))}
             </div>
           </div>
         )}
 
-                {/* Debug: Show all orders */}
-        {orders && orders.length > 0 && (
-          <Card className="border-border bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <h3 className="text-lg font-medium text-foreground mb-3">
-                Отладка: Все заказы ({orders.length})
-              </h3>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {orders.map((order: Order) => (
-                  <div key={order.id} className="p-2 bg-muted/20 rounded text-sm">
-                    <div className="font-medium">#{order.order_number} - {order.status}</div>
-                    <div className="text-muted-foreground">
-                      Позиций: {order.orderItems?.length || 0}
-                      {order.orderItems?.map((item: OrderItem, index: number) => (
-                        <span key={index} className="ml-2">
-                          [{item.status}]
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* No Orders State */}
-        {finalFilteredOrders.length === 0 && (
-          <Card className="border-border bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-12 text-center">
-              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                Нет активных заказов для кухни
-              </h3>
-              <div className="text-muted-foreground space-y-2">
-                <p>Все заказы готовы или нет новых заказов</p>
-                <div className="text-xs mt-4 p-3 bg-muted/30 rounded">
-                  <p>Отладка:</p>
-                  <p>Всего заказов: {orders?.length || 0}</p>
-                  <p>После фильтрации: {filteredOrders.length}</p>
-                  <p>Финальных заказов: {finalFilteredOrders.length}</p>
-                  <p>Статус фильтр: {statusFilter}</p>
-                  <p>Поиск: &quot;{searchQuery}&quot;</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 mx-4 mt-4 rounded border border-red-200 dark:border-red-800">
-            {error}
-            <Button variant="outline" size="sm" onClick={refetch} className="ml-2">
-              Повторить
-            </Button>
+        {/* Низкий приоритет */}
+        {lowOrders.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-600 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              НИЗКИЙ ПРИОРИТЕТ ({lowOrders.length})
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {lowOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  priority="low"
+                  onStartCooking={handleStartCooking}
+                  onMarkReady={handleMarkReady}
+                />
+              ))}
+            </div>
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {filteredOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Нет заказов</h3>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredOrders.map((order) => (
-                <Card key={order.id}>
-                  <CardHeader>
-                    <div className="flex justify-between">
-                      <CardTitle className="text-lg">
-                        {order.order_number || `Заказ #${order.id.slice(-6)}`}
-                      </CardTitle>
-                     
-                    </div>
-                    <div className="flex w-full">
-                    <Badge className={`${getStatusColor(order.status)} w-full flex`}>
-                      {getStatusIcon(order.status)}
-                      <span className="ml-1">{getStatusText(order.status)}</span>
-                    </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {order.orderItems?.map((item) => (
-                        <div key={item.id} className="flex justify-between p-3 border border-border rounded bg-card">
-                          <div>
-                            <h4 className="font-medium text-card-foreground">{item.menuItem?.name || 'Неизвестно'}</h4>
-                            <span className="text-sm text-muted-foreground">x{item.quantity}</span>
-                          </div>
-                          <div>
-                            {item.status === 'pending' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStartCookingItem(order.id, item.id)}
-                              >
-                                Готовить
-                              </Button>
-                            )}
-                            {item.status === 'cooking' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMarkItemReady(order.id, item.id)}
-                                className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
-                              >
-                                Готово
-                              </Button>
-                            )}
-                            {item.status === 'ready' && (
-                              <span className="text-sm text-green-600 dark:text-green-400">✓ Готово</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Сообщение об отсутствии заказов */}
+        {sortedOrders.length === 0 && (
+          <div className="text-center py-12">
+            <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+              Нет заказов для отображения
+            </h3>
+            <p className="text-muted-foreground">
+              {searchTerm || selectedStatus !== "all" 
+                ? "Попробуйте изменить фильтры поиска" 
+                : "Все заказы обработаны"}
+            </p>
+          </div>
+        )}
       </div>
     </RoleGuard>
   );
@@ -567,12 +345,9 @@ function OrderCard({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const activeItems = order.orderItems?.filter(item => 
-    !['ready', 'served', 'cancelled'].includes(item.status)
-  ) || [];
 
-  const pendingItems = activeItems.filter(item => item.status === 'pending');
-  const cookingItems = activeItems.filter(item => item.status === 'cooking');
+
+
 
   return (
     <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-border bg-card/80 backdrop-blur-sm">
@@ -643,78 +418,65 @@ function OrderCard({
           </div>
         </div>
 
-        {/* Кнопка разворачивания */}
-        <Button 
-          variant="outline" 
+        {/* Кнопка развертывания */}
+        <Button
+          variant="outline"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full border-border hover:bg-muted/50"
+          className="w-full"
         >
           {isExpanded ? 'Скрыть детали' : 'Показать детали'}
         </Button>
 
-        {/* Развернутые товары */}
+        {/* Детали заказа */}
         {isExpanded && (
-          <div className="pt-3 border-t border-border space-y-3">
-            {activeItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">
-                    {item.menuItem?.name || 'Неизвестный товар'}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    ₽{Number(item.unit_price).toFixed(2)} × {item.quantity}
-                  </p>
-                                     {item.special_instructions && (
-                     <div className="flex items-center gap-1 mt-1">
-                       <AlertTriangle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                       <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
-                         {item.special_instructions}
-                       </p>
+          <div className="space-y-3 pt-3 border-t">
+            <h4 className="font-semibold text-sm">Позиции заказа:</h4>
+            <div className="space-y-2">
+              {order.orderItems?.map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+                  <div className="flex-1">
+                                         <div className="font-medium text-sm">{item.menuItem?.name || 'Неизвестный товар'}</div>
+                     <div className="text-xs text-muted-foreground">
+                       Количество: {item.quantity}
                      </div>
-                   )}
-                </div>
-                
-                <div className="flex items-center gap-2 ml-2">
-                  {item.status === "pending" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onStartCooking(order.id, item.id)}
-                      className="text-xs h-7 px-2 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-950/40"
-                    >
-                                             <Clock className="w-3 h-3 mr-1" />
-                      Готовить
-                    </Button>
-                  )}
-                  {item.status === "cooking" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onMarkReady(order.id, item.id)}
-                      className="text-xs h-7 px-2 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/40"
-                    >
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Готово
-                    </Button>
-                  )}
-                  {item.status === "ready" && (
-                    <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300">
-                      ✓ Готово
+                     {item.special_instructions && (
+                       <div className="text-xs text-muted-foreground">
+                         Примечания: {item.special_instructions}
+                       </div>
+                     )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(item.status)}>
+                      {getStatusText(item.status)}
                     </Badge>
-                  )}
+                    {item.status === 'pending' && (
+                      <Button
+                        size="sm"
+                        onClick={() => onStartCooking(order.id, item.id)}
+                        className="h-8 px-2 text-xs"
+                      >
+                        Начать готовить
+                      </Button>
+                    )}
+                    {item.status === 'cooking' && (
+                      <Button
+                        size="sm"
+                        onClick={() => onMarkReady(order.id, item.id)}
+                        className="h-8 px-2 text-xs bg-green-600 hover:bg-green-700"
+                      >
+                        Готово
+                      </Button>
+                    )}
+                    {item.status === 'ready' && (
+                      <span className="text-sm text-green-600 dark:text-green-400">✓ Готово</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
-
-        {/* Сводка по статусам */}
-        <div className="flex items-center justify-between pt-2 border-t border-border text-xs text-muted-foreground">
-          <span>Ожидают: {pendingItems.length}</span>
-          <span>Готовятся: {cookingItems.length}</span>
-          <span>Готовы: {activeItems.filter(item => item.status === 'ready').length}</span>
-        </div>
       </CardContent>
     </Card>
   );

@@ -11,12 +11,8 @@ import {
   Users, 
   Search,
   Filter,
-  X,
   Clock,
-  MapPin,
-  Receipt,
   CheckCircle,
-  ArrowRight,
   Minus,
   Plus,
   Trash2,
@@ -56,7 +52,7 @@ export default function POSPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [guestCount, setGuestCount] = useState(1);
-  const [tableId, setTableId] = useState<string>("");
+  const [tableId, setTableId] = useState<string | null>(null);
   const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
@@ -67,7 +63,8 @@ export default function POSPage() {
   const { tables, isLoading, error, fetchTables, updateTableStatus } = useTables();
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
-  const { menuItems, categories } = useMenuItems();
+  const { menuItems } = useMenuItems();
+  const { categories } = useCategories();
 
   useEffect(() => {
     fetchTables();
@@ -75,37 +72,33 @@ export default function POSPage() {
 
   const handleCreateOrder = async () => {
     const formData = {
-      locationId: '1', // Default location
-      tableId: orderType === 'dine_in' ? tableId : undefined,
-      orderType,
-      customerName,
-      customerPhone,
-      guestCount,
-      notes,
-      items: cartItems.map(item => ({
-        menuItemId: item.menuItemId,
-        quantity: item.quantity,
-        specialInstructions: ''
-      }))
+      customerName: customerName,
+      customerPhone: customerPhone,
+      guestCount: guestCount,
+      notes: notes,
+      orderType: orderType
     };
 
-    try {
-      await createOrder(formData);
-      clearCart();
-      setCustomerName("");
-      setCustomerPhone("");
-      setGuestCount(1);
-      setTableId("");
-      setTableNumber(null);
-      setNotes("");
-      setOrderType('dine_in');
-      setShowOrderForm(false);
-      setShowCustomerForm(false);
-      alert("Заказ успешно создан!");
-    } catch (error) {
-      console.error("Ошибка создания заказа:", error);
-      alert("Ошибка создания заказа");
-    }
+    createOrder(
+      cartItems,
+      tableId,
+      formData,
+      (order) => {
+        console.log('Order created successfully:', order);
+        clearCart();
+        // Reset form
+        setCustomerName('');
+        setCustomerPhone('');
+        setGuestCount(1);
+        setNotes('');
+        setTableId('');
+        setOrderType('dine_in');
+      },
+      (error) => {
+        console.error('Failed to create order:', error);
+        // Handle error (show toast, etc.)
+      }
+    );
   };
 
   const totalAmount = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0);
@@ -419,7 +412,7 @@ export default function POSPage() {
                       >
                         <User className="w-4 h-4 mr-2" />
                         Детали заказа
-                        <ArrowRight className="w-4 h-4 ml-2" />
+                        {/* ArrowRight icon was removed from imports, so it's removed here */}
                       </Button>
                     </div>
                   </div>
@@ -440,7 +433,7 @@ export default function POSPage() {
                     onClick={() => setShowCustomerForm(false)}
                     className="h-8 w-8 p-0"
                   >
-                    <X className="w-4 h-4" />
+                    {/* X icon was removed from imports, so it's removed here */}
                   </Button>
                 </div>
 
@@ -483,8 +476,9 @@ export default function POSPage() {
                       <select
                         value={tableId || ""}
                         onChange={(e) => {
-                          setTableId(e.target.value);
-                          const selectedTable = tables?.find((table) => table.id === e.target.value);
+                          const value = e.target.value || null;
+                          setTableId(value);
+                          const selectedTable = tables?.find((table) => table.id === value);
                           setTableNumber(selectedTable ? selectedTable.number : null);
                         }}
                         className="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
