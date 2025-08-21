@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { 
   BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
+  TrendingUp as TrendingUpIcon, 
+  TrendingDown as TrendingDownIcon, 
   DollarSign,
   Users,
   Package,
@@ -21,7 +21,7 @@ export default function ReportsPage() {
     {
       title: "Отчет по продажам",
       description: "Анализ продаж по периодам, категориям и продуктам",
-      icon: TrendingUp,
+      icon: TrendingUpIcon,
       color: "text-green-600",
       href: "/reports/sales"
     },
@@ -54,7 +54,7 @@ export default function ReportsPage() {
       value: "₽ 45,230",
       change: "+12.5%",
       trend: "up",
-      icon: TrendingUp,
+      icon: TrendingUpIcon,
       color: "text-green-600"
     },
     {
@@ -150,7 +150,7 @@ export default function ReportsPage() {
                   <p className={`text-xs flex items-center gap-1 ${
                     stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {stat.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    {stat.trend === 'up' ? <TrendingUpIcon className="w-3 h-3" /> : <TrendingDownIcon className="w-3 h-3" />}
                     {stat.change}
                   </p>
                 </CardContent>
