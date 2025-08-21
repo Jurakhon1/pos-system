@@ -22,7 +22,12 @@ import {
   CreditCard,
   DollarSign,
   Filter,
+<<<<<<< HEAD
   Calendar
+=======
+  Calendar,
+  TableIcon
+>>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
 } from "lucide-react";
 import { useOrders } from "@/entities/orders/hooks/useOrders";
 import { Order, OrderItem, ORDER_STATUSES, PaymentRequest } from "@/shared/types/orders";
@@ -266,6 +271,7 @@ export default function OrdersPage() {
         {
           id: '1',
           order_number: '1234',
+<<<<<<< HEAD
           location_id: '1',
           status: 'pending',
           order_type: 'dine_in',
@@ -301,6 +307,17 @@ export default function OrdersPage() {
               }
             }
           ]
+=======
+          status: 'pending',
+          total_amount: '1250.00',
+          created_at: new Date().toISOString(),
+          customer_name: 'Иван Иванов',
+          customer_phone: '+7 (999) 123-45-67',
+          table_number: '5',
+          order_type: 'dine_in',
+          guest_count: 2,
+          notes: 'Без лука'
+>>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
         }
       ];
       setOrders(mockOrders);

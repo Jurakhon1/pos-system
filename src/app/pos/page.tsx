@@ -13,6 +13,10 @@ import {
   Filter,
   Clock,
   CheckCircle,
+<<<<<<< HEAD
+=======
+  ArrowRight,
+>>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
   Minus,
   Plus,
   Trash2,
@@ -52,7 +56,11 @@ export default function POSPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [guestCount, setGuestCount] = useState(1);
+<<<<<<< HEAD
   const [tableId, setTableId] = useState<string | null>(null);
+=======
+  const [tableId, setTableId] = useState<string>("");
+>>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
   const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
@@ -63,8 +71,12 @@ export default function POSPage() {
   const { tables, isLoading, error, fetchTables, updateTableStatus } = useTables();
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
+<<<<<<< HEAD
   const { menuItems } = useMenuItems();
   const { categories } = useCategories();
+=======
+  const { menuItems, categories } = useMenuItems();
+>>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
 
   useEffect(() => {
     fetchTables();
@@ -72,6 +84,7 @@ export default function POSPage() {
 
   const handleCreateOrder = async () => {
     const formData = {
+<<<<<<< HEAD
       customerName: customerName,
       customerPhone: customerPhone,
       guestCount: guestCount,
@@ -99,6 +112,39 @@ export default function POSPage() {
         // Handle error (show toast, etc.)
       }
     );
+=======
+      locationId: '1', // Default location
+      tableId: orderType === 'dine_in' ? tableId : undefined,
+      orderType,
+      customerName,
+      customerPhone,
+      guestCount,
+      notes,
+      items: cartItems.map(item => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        specialInstructions: ''
+      }))
+    };
+
+    try {
+      await createOrder(formData);
+      clearCart();
+      setCustomerName("");
+      setCustomerPhone("");
+      setGuestCount(1);
+      setTableId("");
+      setTableNumber(null);
+      setNotes("");
+      setOrderType('dine_in');
+      setShowOrderForm(false);
+      setShowCustomerForm(false);
+      alert("Заказ успешно создан!");
+    } catch (error) {
+      console.error("Ошибка создания заказа:", error);
+      alert("Ошибка создания заказа");
+    }
+>>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
   };
 
   const totalAmount = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0);
