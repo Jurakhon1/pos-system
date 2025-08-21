@@ -8,13 +8,7 @@ import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { 
   Settings, 
-  Save, 
-  RefreshCw, 
   Database, 
-  Bell,
-  Shield,
-  Globe,
-  Palette,
   CreditCard
 } from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
@@ -69,11 +63,10 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleReset}>
-              <RefreshCw className="w-4 h-4 mr-2" />
               Сброс
             </Button>
             <Button onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
+              <Settings className="w-4 h-4 mr-2" />
               Сохранить
             </Button>
           </div>
@@ -83,7 +76,6 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-blue-600" />
               Общие настройки
             </CardTitle>
           </CardHeader>
@@ -303,7 +295,6 @@ export default function SettingsPage() {
                 Создать резервную копию
               </Button>
               <Button variant="outline" className="w-full">
-                <RefreshCw className="w-4 h-4 mr-2" />
                 Восстановить из копии
               </Button>
               <Button variant="outline" className="w-full">
@@ -316,21 +307,17 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-orange-600" />
                 Безопасность
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button variant="outline" className="w-full">
-                <Shield className="w-4 h-4 mr-2" />
                 Изменить пароль
               </Button>
               <Button variant="outline" className="w-full">
-                <Bell className="w-4 h-4 mr-2" />
                 Настройки уведомлений
               </Button>
               <Button variant="outline" className="w-full">
-                <Palette className="w-4 h-4 mr-2" />
                 Настройки темы
               </Button>
             </CardContent>
