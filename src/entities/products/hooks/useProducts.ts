@@ -70,7 +70,7 @@ export const useProducts = () => {
   // Обновить запасы
   const updateStockMutation = useMutation({
     mutationFn: ({ id, stockQuantity }: { id: string; stockQuantity: number }) =>
-      ProductsApi.updateStock(id, stockQuantity),
+      ProductsApi.updateStock(id, stockQuantity.toString()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Запасы обновлены");
@@ -79,6 +79,7 @@ export const useProducts = () => {
       toast.error(`Ошибка при обновлении запасов: ${error.message}`);
     },
   });
+
 
   // Обновить изображение
   const updateImageMutation = useMutation({
