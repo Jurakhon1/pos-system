@@ -8,7 +8,7 @@ export const useProducts = () => {
 
   const { data: products, isLoading, error } = useQuery({
     queryKey: ["products", locationId],
-    queryFn: () => productsApi.getProducts(locationId),
+    queryFn: () => productsApi.getProducts(locationId || undefined),
     enabled: !!locationId, // Запрос выполняется только если есть locationId
   });
 
