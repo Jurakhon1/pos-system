@@ -120,13 +120,13 @@ export const useOrderCreation = () => {
         console.log('Order created successfully:', data);
         onSuccess?.(data);
       },
-      onError: (error) => {
+      onError: (error: any) => {
         console.error('Failed to create order:', error);
         // Добавляем детальную информацию об ошибке
         if (error.response?.data) {
           console.error('Error response data:', error.response.data);
         }
-        onError?.(error);
+        onError?.({ message: error.message || 'Произошла ошибка при создании заказа' });
       }
     });
   }, [createOrderFromCart, getCurrentUserId, getCurrentLocationId]);
