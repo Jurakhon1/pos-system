@@ -4,6 +4,8 @@ export interface User {
   email: string;
   password: string;
   role?: "superadmin" | "admin" | "cashier" | "manager" | "chef" | "cook" | "waiter";
+  first_name?: string;
+  last_name?: string;
 }
 
 export interface RegisterUser {
@@ -13,7 +15,9 @@ export interface RegisterUser {
 }
 
 export interface AuthResponse {
-  access_token: string;
+  accessToken: string;
+  refreshToken?: string;
+  user?: User;
 }
 
 // Константы ролей

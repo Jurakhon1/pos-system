@@ -312,6 +312,13 @@ export default function MenuPage() {
     setDeleteModal({ isOpen: false, menuItem: null });
   };
 
+  // Функция для обновления страницы
+  const handleRetry = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
   // Обработка ошибок
   if (menuError || categoriesError) {
     return (
@@ -324,7 +331,7 @@ export default function MenuPage() {
           <p className="text-gray-500 mb-4">
             {menuError?.message || categoriesError?.message || "Произошла ошибка при загрузке данных"}
           </p>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={handleRetry}>
             Попробовать снова
           </Button>
         </div>

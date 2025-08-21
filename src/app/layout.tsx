@@ -1,9 +1,11 @@
+
 import POSSidebar from "@/widgets/sidebar/POSSidebar";
 import "./globals.css";
 import QueryProvider from "@/shared/providers/QueryProvider";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/shared/ui/sidebar";
 import Toolbar from "@/widgets/toolbar/toolbar";
 import { ThemeProvider } from "@/shared/providers/theme-provider";
+import LayoutContent from "./LayoutContent";
 
 export default function RootLayout({
   children,
@@ -25,20 +27,9 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-          <SidebarProvider defaultOpen={true}>
-            <div className="flex h-screen w-full">
-              <POSSidebar />
-              <SidebarInset className="flex-1 overflow-auto bg-background min-w-0">
-                <div className="flex items-center gap-2 p-5 shadow-md shadow-border border-b border-border">
-                  <SidebarTrigger className="h-8 w-8" />
-                  <Toolbar />
-                </div>
-                <main className="flex-1">
-                  {children}
-                </main>
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
+            <LayoutContent>
+              {children}
+            </LayoutContent>
           </ThemeProvider>
         </QueryProvider>
       </body>

@@ -361,6 +361,13 @@ export default function KitchenPage() {
     }
   };
 
+  // Функция для обновления страницы
+  const handleRetry = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
   // Error handling
   if (error) {
     return (
@@ -377,7 +384,7 @@ export default function KitchenPage() {
               {error.message || "Произошла ошибка при загрузке данных"}
             </p>
             <Button 
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg px-8 py-3 text-lg"
             >
               Попробовать снова

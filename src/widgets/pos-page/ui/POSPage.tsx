@@ -75,6 +75,13 @@ export const POSPageComponent = () => {
   const isLoading = productsLoading || categoriesLoading;
   const hasError = productsError || categoriesError;
 
+  // Функция для обновления страницы
+  const handleRetry = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen bg-gray-100 flex items-center justify-center">
@@ -92,7 +99,7 @@ export const POSPageComponent = () => {
         <div className="text-center">
           <p className="text-red-600 mb-4">Ошибка загрузки данных</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={handleRetry}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Попробовать снова
