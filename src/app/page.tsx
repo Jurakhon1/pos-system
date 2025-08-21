@@ -11,7 +11,7 @@ export default function HomePage() {
   useEffect(() => {
     // Если пользователь аутентифицирован, перенаправляем на dashboard
     if (isAuthenticated()) {
-      router.push("/dashboard");
+      router.push("/orders");
     } else {
       // Если не аутентифицирован, перенаправляем на логин
       router.push("/login");
