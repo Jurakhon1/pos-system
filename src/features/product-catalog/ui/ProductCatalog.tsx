@@ -6,9 +6,9 @@ import { Search } from "lucide-react";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
-import { Products } from "@/entities/product";
 import { Category } from "@/shared/types/categories";
 import Image from "next/image";
+import { Products } from "@/shared/types/products";
 
 interface ProductCatalogProps {
   products: Products[];
