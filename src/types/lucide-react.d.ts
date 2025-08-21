@@ -4,7 +4,7 @@ declare module 'lucide-react' {
   interface IconProps {
     className?: string;
     size?: number | string;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   export const Users: ComponentType<IconProps>;
@@ -16,6 +16,11 @@ declare module 'lucide-react' {
   export const Minus: ComponentType<IconProps>;
   export const Trash2: ComponentType<IconProps>;
   export const User: ComponentType<IconProps>;
+  export const UserPlus: ComponentType<IconProps>;
+  export const Lock: ComponentType<IconProps>;
+  export const Mail: ComponentType<IconProps>;
+  export const Building: ComponentType<IconProps>;
+  export const LogIn: ComponentType<IconProps>;
   export const FileText: ComponentType<IconProps>;
   export const CreditCard: ComponentType<IconProps>;
   export const Search: ComponentType<IconProps>;

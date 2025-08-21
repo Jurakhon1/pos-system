@@ -37,7 +37,18 @@ export interface CreateProductDto {
   is_active: boolean;
 }
 
-export interface UpdateProductDto extends Partial<CreateProductDto> {}
+export interface UpdateProductDto {
+  name?: string;
+  description?: string;
+  unit?: string;
+  purchase_price?: string;
+  category_id?: string;
+  supplier_id?: string | null;
+  barcode?: string;
+  sku?: string;
+  minimum_stock?: string;
+  is_active?: boolean;
+}
 
 export const ProductsApi = {
   // Получить все продукты

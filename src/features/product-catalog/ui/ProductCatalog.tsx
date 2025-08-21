@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Products } from "@/entities/product";
 import { Category } from "@/shared/types/categories";
+import Image from "next/image";
 
 interface ProductCatalogProps {
   products: Products[];
@@ -112,9 +113,11 @@ export const ProductCatalogComponent = ({
                   <CardContent className="p-3">
                     <div className="w-full h-32 bg-gray-200 rounded-md mb-2 flex items-center justify-center">
                       {product.imageUrl ? (
-                        <img
+                        <Image
                           src={product.imageUrl}
                           alt={product.name}
+                          width={128}
+                          height={128}
                           className="w-full h-full object-cover rounded-md"
                         />
                       ) : (

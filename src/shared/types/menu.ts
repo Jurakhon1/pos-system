@@ -18,7 +18,7 @@ export interface MenuItem {
   created_at: string;
   updated_at: string;
   category: MenuCategory;
-  recipes: any[]; // Можно расширить позже для техкарт
+  recipes: unknown[]; // Можно расширить позже для техкарт
 }
 
 export interface MenuCategory {

@@ -3,12 +3,9 @@
 import * as React from "react"
 import { 
   Home, 
-  ShoppingCart, 
   Utensils, 
   BarChart, 
   Settings, 
-  ChevronLeft, 
-  ChevronRight,
   Receipt,
   LogOut,
   Shield
@@ -26,7 +23,6 @@ import {
   SidebarMenuItem,
   useSidebar
 } from "@/shared/ui/sidebar"
-import { Button } from "@/shared/ui/button"
 import { cn } from "@/shared/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { useAuth } from "@/entities/auth/hooks/useAuth"

@@ -23,7 +23,7 @@ export const useCart = () => {
         price: Number(product.price), 
         quantity: 1,
         imageUrl: product.imageUrl,
-        menuItemId: product.menuItemId || product.id.toString()
+        menuItemId: product.menuItemId || product.id!.toString()
       }];
     });
   }, []);

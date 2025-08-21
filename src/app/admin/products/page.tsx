@@ -15,11 +15,10 @@ import {
   Image as ImageIcon,
   DollarSign,
   Scale,
-  Calendar,
-  XCircle
+  XCircle,
+  Calendar
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useProducts } from "@/entities/products/hooks/useProducts";
 import { CreateProductDto, UpdateProductDto, Product } from "@/entities/products/api/productsApi";
 
@@ -293,7 +292,7 @@ const DeleteConfirmModal = ({
           </div>
           
           <p className="text-gray-600 mb-6">
-            Вы уверены, что хотите удалить продукт "{product.name}"? 
+            Вы уверены, что хотите удалить продукт &quot;{product.name}&quot;? 
             Это действие нельзя отменить.
           </p>
 

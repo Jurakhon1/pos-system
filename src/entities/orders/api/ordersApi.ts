@@ -1,5 +1,6 @@
+"use client"
 import api from "@/shared/api/axios";
-import { CreateOrder, CreateOrderFromCart } from "@/shared/types/orders";
+import { CreateOrder, CreateOrderFromCart, PaymentRequest, PaymentResponse } from "@/shared/types/orders";
 
 export const OrdersApi = {
   getOrders: async () => {
@@ -63,12 +64,16 @@ export const OrdersApi = {
     
     return order;
   },
-  processPayment: async (orderId: string, paymentData: { paymentMethod: 'cash' | 'card' | 'mixed'; cashAmount?: number; cardAmount?: number; discountAmount?: number }) => {
+  processPayment: async (orderId: string, paymentData: PaymentRequest): Promise<PaymentResponse> => {
     const response = await api.post(`/orders/${orderId}/payment`, paymentData);
     return response.data;
   },
   deleteOrder: async (orderId: string) => {
     const response = await api.delete(`/orders/${orderId}`);
+    return response.data;
+  },
+  updateOrderStatus: async (orderId: string, status: string) => {
+    const response = await api.patch(`/orders/${orderId}/status`, { status });
     return response.data;
   },
   updateOrder: async (orderId: string, orderData: Partial<CreateOrder>) => {
@@ -89,11 +94,8 @@ export const OrdersApi = {
   },
   // Kitchen management methods
   startCookingOrderItem: async (orderId: string, itemId: string, cookId?: string) => {
-    // Backend requires cook_id, use default if not provided
-    const defaultCookId = cookId || 'default-cook-id'; // В реальном приложении это должно быть ID текущего повара
-    const response = await api.put(`/orders/${orderId}/items/${itemId}/start-cooking`, { 
-      cook_id: defaultCookId 
-    });
+    const payload = cookId ? { cook_id: cookId } : {};
+    const response = await api.put(`/orders/${orderId}/items/${itemId}/start-cooking`, payload);
     return response.data;
   },
   markOrderItemReady: async (orderId: string, itemId: string) => {

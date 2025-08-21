@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Button } from "@/shared/ui/button";
 import { 
   Settings, 
   XCircle, 
   CheckCircle, 
   Package, 
-  Users, 
+  Users,
   ShoppingCart,
   BarChart3,
-  Database,
   Shield
 } from "lucide-react";
 import Link from "next/link";
@@ -220,22 +217,22 @@ export default function AdminPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Новая категория "Десерты" добавлена</span>
+              <span className="text-sm text-gray-600">Новая категория &quot;Десерты&quot; добавлена</span>
               <span className="text-xs text-gray-400 ml-auto">2 мин назад</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Обновлено меню "Основные блюда"</span>
+              <span className="text-sm text-gray-600">Обновлено меню &quot;Основные блюда&quot;</span>
               <span className="text-xs text-gray-400 ml-auto">15 мин назад</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Новый продукт "Сыр моцарелла" добавлен</span>
+              <span className="text-sm text-gray-600">Новый продукт &quot;Сыр моцарелла&quot; добавлен</span>
               <span className="text-xs text-gray-400 ml-auto">1 час назад</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Новая кухонная станция "Горячий цех" создана</span>
+              <span className="text-sm text-gray-600">Новая кухонная станция &quot;Горячий цех&quot; создана</span>
               <span className="text-xs text-gray-400 ml-auto">2 часа назад</span>
             </div>
           </div>

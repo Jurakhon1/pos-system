@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Settings, Eye } from "lucide-react";
+import { Clock, Moon, Sun } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
@@ -41,11 +41,11 @@ export default function Toolbar() {
           className="h-8 w-8"
         >
           {!mounted ? (
-            <Settings size={16} />
+            <Moon size={16} />
           ) : theme === "dark" ? (
-            <Eye size={16} />
+            <Sun size={16} />
           ) : (
-            <Settings size={16} />
+            <Moon size={16} />
           )}
         </Button>
       </div>

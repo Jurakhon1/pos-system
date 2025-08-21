@@ -82,9 +82,10 @@ export function useMenuItems(
       const menuData = menuResponse.data.data || menuResponse.data;
       setMenuItems(menuData);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
       setIsError(true);
-      setError(err.response?.data?.message || err.message || 'Ошибка загрузки данных');
+      setError(error.response?.data?.message || error.message || 'Ошибка загрузки данных');
       console.error('Ошибка загрузки меню:', err);
     } finally {
       setIsLoading(false);

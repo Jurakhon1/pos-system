@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useOrders } from '@/entities/orders/hooks/useOrders';
 import { useAuth } from '@/entities/auth/hooks/useAuth';
-import { CreateOrderFromCart } from '@/shared/types/orders';
+import { CreateOrderFromCart, Order } from '@/shared/types/orders';
 import { CartItem } from '@/entities/cart';
 
 export interface OrderFormData {
@@ -20,8 +20,8 @@ export const useOrderCreation = () => {
     cartItems: CartItem[],
     tableId: string | null,
     formData: OrderFormData,
-    onSuccess?: (data: any) => void,
-    onError?: (error: any) => void
+    onSuccess?: (data: Order) => void,
+    onError?: (error: { message: string }) => void
   ) => {
     // Валидация корзины
     if (cartItems.length === 0) {

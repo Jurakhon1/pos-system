@@ -40,7 +40,7 @@ export const POSPageComponent = () => {
       items,
       selectedTable,
       formData,
-      (data) => {
+      () => {
         // Успешное создание заказа
         clearCart();
         setSelectedTable(null); // Сброс выбранного стола

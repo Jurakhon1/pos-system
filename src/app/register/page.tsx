@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { UserPlus, User, Lock, Mail, Building } from "lucide-react";
+import { UserPlus, Lock, Mail, Building } from "lucide-react";
 import { useAuth } from "@/entities/auth/hooks/useAuth";
 import { useState } from "react";
 import Link from "next/link";
@@ -29,7 +29,7 @@ const roleOptions = [
 ];
 
 export default function RegisterPage() {
-  const { register: registerUser, isLoading, error } = useAuth();
+  const { register: registerUser, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
@@ -44,6 +44,8 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
+    // confirmPassword is used for validation in the schema
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { confirmPassword, ...userData } = data;
     registerUser(userData);
   };
@@ -197,14 +199,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Error message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-600">
-                  {error.message || "Ошибка при регистрации"}
-                </p>
-              </div>
-            )}
+
 
             {/* Submit button */}
             <Button 

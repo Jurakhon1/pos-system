@@ -12,7 +12,6 @@ interface ShoppingCartProps {
   selectedTable: string | null;
   onUpdateQuantity: (id: number | string, change: number) => void;
   onRemoveItem: (id: number | string) => void;
-  onClearCart: () => void;
   onCheckout: () => void;
   onTableSelect: (tableId: string) => void;
   onTableClear: () => void;
@@ -25,7 +24,7 @@ export const ShoppingCartComponent = ({
   selectedTable,
   onUpdateQuantity,
   onRemoveItem,
-  onClearCart,
+
   onCheckout,
   onTableSelect,
   onTableClear,
@@ -52,60 +51,61 @@ export const ShoppingCartComponent = ({
         {items.length === 0 ? (
           <p className="text-gray-500 text-center py-8">Корзина пуста</p>
         ) : (
-                     <div className="space-y-3">
-             <AnimatePresence>
-               {items.map((item, index) => (
-                 <motion.div
-                   key={item.id}
-                   initial={{ opacity: 0, x: -20, scale: 0.9 }}
-                   animate={{ opacity: 1, x: 0, scale: 1 }}
-                   exit={{ opacity: 0, x: 20, scale: 0.9 }}
-                   transition={{ 
-                     duration: 0.3, 
-                     delay: index * 0.1,
-                     type: "spring",
-                     stiffness: 300
-                   }}
-                   className="bg-gray-50 rounded-lg p-3"
-                 >
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-medium text-sm">{item.name}</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRemoveItem(item.id)}
-                    className="text-red-500 hover:text-red-700 p-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-green-600 font-bold">{item.price} ₽</span>
-                  <div className="flex items-center gap-2">
+          <div className="space-y-3">
+            <AnimatePresence>
+              {items.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -20, scale: 0.9 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 20, scale: 0.9 }}
+                  transition={{ 
+                    duration: 0.3, 
+                    delay: index * 0.1,
+                    type: "spring",
+                    stiffness: 300
+                  }}
+                  className="bg-gray-50 rounded-lg p-3"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-medium text-sm">{item.name}</h4>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => onUpdateQuantity(item.id, -1)}
-                      className="w-8 h-8 p-0"
+                      onClick={() => onRemoveItem(item.id)}
+                      className="text-red-500 hover:text-red-700 p-1"
                     >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="w-8 text-center font-medium">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onUpdateQuantity(item.id, 1)}
-                      className="w-8 h-8 p-0"
-                    >
-                      <Plus className="w-3 h-3" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-green-600 font-bold">{item.price} ₽</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onUpdateQuantity(item.id, -1)}
+                        className="w-8 h-8 p-0"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onUpdateQuantity(item.id, 1)}
+                        className="w-8 h-8 p-0"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
 
       {/* Итого */}
       <div className="border-t border-gray-200 pt-4 mb-4">

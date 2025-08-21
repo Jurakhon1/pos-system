@@ -1,5 +1,6 @@
 import api from "@/shared/api/axios";
 import { Products } from "@/shared/types/products";
+import { MenuItem } from "@/shared/types/menu";
 
 export const productsApi = {
   getProducts: async (locationId?: string): Promise<Products[]> => {
@@ -11,7 +12,7 @@ export const productsApi = {
     
     const response = await api.get(`/menu/items?${params.toString()}`);
     // Преобразуем данные в формат Products
-    return response.data.map((item: any) => ({
+    return response.data.map((item: MenuItem) => ({
       id: item.id,
       name: item.name,
       description: item.description,
