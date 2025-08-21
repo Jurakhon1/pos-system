@@ -8,7 +8,6 @@ import {
   Package, 
   BarChart3, 
   Users, 
-  TrendingUp,
   Clock} from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
@@ -99,7 +98,6 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
                 Быстрые действия
               </CardTitle>
             </CardHeader>
