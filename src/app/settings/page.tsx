@@ -15,7 +15,6 @@ import {
   Shield,
   Globe,
   Palette,
-  Printer,
   CreditCard
 } from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
