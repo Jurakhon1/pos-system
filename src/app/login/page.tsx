@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { LogIn, User, Lock } from "lucide-react";
+import { User, Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/entities/auth/hooks/useAuth";
 import { useState } from "react";
 import Link from "next/link";
@@ -17,9 +17,9 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -38,7 +38,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mb-4">
-            <LogIn className="h-8 w-8 text-white" />
+            <User className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Вход в систему</h2>
           <p className="mt-2 text-sm text-gray-600">
@@ -112,19 +112,12 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Error message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-600">
-                  {error.message || "Ошибка при входе в систему"}
-                </p>
-              </div>
-            )}
+
 
             {/* Submit button */}
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-base font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -144,8 +137,8 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Нет аккаунта?{" "}
-                <Link 
-                  href="/register" 
+                <Link
+                  href="/register"
                   className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Зарегистрироваться
@@ -154,7 +147,7 @@ export default function LoginPage() {
             </div>
           </form>
 
-          
+
         </div>
       </div>
     </div>

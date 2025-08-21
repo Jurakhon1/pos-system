@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { 
@@ -15,15 +15,15 @@ import {
   Image as ImageIcon,
   DollarSign,
   Scale,
-  Calendar,
   XCircle,
   CheckCircle
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useCategories } from "@/entities/categories/hooks/useCategories";
 import { useMenuItems } from "@/entities/menu-item/hooks/useMenuItem";
-import { MenuItem, MenuItemDto } from "@/shared/types/menu";
+import { MenuItem } from "@/shared/types/menu";
+import { Category } from "@/entities/categories/api/categoriesApi";
+import Image from "next/image";
 
 // Модальное окно для создания/редактирования пункта меню
 const MenuItemModal = ({ 
@@ -31,20 +31,18 @@ const MenuItemModal = ({
   isOpen, 
   onClose, 
   onSave,
-  categories,
   isLoading
 }: { 
-  menuItem: any; 
+  menuItem: MenuItem | null; 
   isOpen: boolean; 
   onClose: () => void;
-  onSave: (data: any) => void;
-  categories: any[];
+  onSave: (data: Partial<MenuItem>) => void;
   isLoading: boolean;
 }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: 0,
+    price: "0",
     calories: 0
   });
 
@@ -54,14 +52,14 @@ const MenuItemModal = ({
       setFormData({
         name: menuItem.name,
         description: menuItem.description || "",
-        price: parseFloat(menuItem.price) || 0,
+        price: menuItem.price || "0",
         calories: menuItem.calories || 0
       });
     } else {
       setFormData({
         name: "",
         description: "",
-        price: 0,
+        price: "0",
         calories: 0
       });
     }
@@ -129,7 +127,7 @@ const MenuItemModal = ({
                    type="number"
                    step="0.01"
                    value={formData.price}
-                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                    placeholder="0.00"
                    required
                    disabled={isLoading}
@@ -183,7 +181,7 @@ const DeleteConfirmModal = ({
   onDelete,
   isLoading
 }: { 
-  menuItem: any; 
+  menuItem: MenuItem | null; 
   isOpen: boolean; 
   onClose: () => void;
   onDelete: (id: string) => void;
@@ -203,7 +201,7 @@ const DeleteConfirmModal = ({
           </div>
           
           <p className="text-gray-600 mb-6">
-            Вы уверены, что хотите удалить "{menuItem.name}"? 
+            Вы уверены, что хотите удалить &quot;{menuItem.name}&quot;? 
             Это действие нельзя отменить.
           </p>
 
@@ -238,11 +236,11 @@ export default function MenuPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    menuItem: any;
+    menuItem: MenuItem | null;
   }>({ isOpen: false, menuItem: null });
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
-    menuItem: any;
+    menuItem: MenuItem | null;
   }>({ isOpen: false, menuItem: null });
 
   // Используем реальный API
@@ -269,12 +267,7 @@ export default function MenuPage() {
   } = useCategories();
 
   // Фильтрация пунктов меню
-  const filteredMenuItems = menuItems?.filter((item: any) => {
-    // Debug: Log item structure to identify object rendering issues
-    if (item && typeof item === 'object') {
-      console.log('Processing item:', item);
-    }
-    
+  const filteredMenuItems = menuItems?.filter((item: MenuItem) => {
     const matchesSearch = 
       (typeof item.name === 'string' && item.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (typeof item.description === 'string' && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -287,15 +280,15 @@ export default function MenuPage() {
     setModalState({ isOpen: true, menuItem: null });
   };
 
-  const handleEditMenuItem = (menuItem: any) => {
+  const handleEditMenuItem = (menuItem: MenuItem) => {
     setModalState({ isOpen: true, menuItem });
   };
 
-  const handleDeleteMenuItem = (menuItem: any) => {
+  const handleDeleteMenuItem = (menuItem: MenuItem) => {
     setDeleteModal({ isOpen: true, menuItem });
   };
 
-  const handleSaveMenuItem = (data: any) => {
+  const handleSaveMenuItem = (data: Partial<MenuItem>) => {
     // Transform form data to match API interface - only send allowed properties
     const apiData = {
       name: data.name,
@@ -385,7 +378,7 @@ export default function MenuPage() {
                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
              >
                <option value="all">Все категории</option>
-                               {(categories || []).map((category: any, index: number) => (
+                               {(categories || []).map((category: Category, index: number) => (
                   <option key={category?.id || category?.name || `category-${index}`} value={category?.id || ''}>
                     {category?.name || 'Unknown Category'}
                   </option>
@@ -411,7 +404,7 @@ export default function MenuPage() {
       {/* Menu Items List */}
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {(filteredMenuItems || []).map((item: any, index: number) => (
+                                {(filteredMenuItems || []).map((item: MenuItem, index: number) => (
              <Card key={item?.id || item?.name || `item-${index}`} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 {/* Image */}
@@ -587,7 +580,6 @@ export default function MenuPage() {
         isOpen={modalState.isOpen}
         onClose={() => setModalState({ isOpen: false, menuItem: null })}
         onSave={handleSaveMenuItem}
-        categories={categories}
         isLoading={isCreating || isUpdating}
       />
       

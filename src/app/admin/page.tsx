@@ -10,7 +10,7 @@ import {
   BarChart3,
   FileText,
   Package,
-  Store
+  Building
 } from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
@@ -35,7 +35,7 @@ export default function AdminPage() {
     {
       title: "Управление столами",
       description: "Настройка столов и их расположения",
-      icon: Store,
+      icon: Building,
       href: "/admin/tables",
       color: "text-purple-600"
     },

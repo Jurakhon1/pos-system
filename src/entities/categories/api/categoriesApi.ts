@@ -17,7 +17,12 @@ export interface CreateCategoryDto {
   isActive: boolean;
 }
 
-export interface UpdateCategoryDto extends Partial<CreateCategoryDto> {}
+export interface UpdateCategoryDto {
+  name?: string;
+  description?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+}
 
 export const CategoriesApi = {
   // Получить все категории

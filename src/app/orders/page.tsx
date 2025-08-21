@@ -5,166 +5,331 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { 
+  Search, 
   Clock, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  Printer,
-  Search,
+  User, 
+  ShoppingCart,
+  Eye,
+  Trash2,
+  Plus,
+  Table,
+  Phone,
+  Users,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  CreditCard,
+  DollarSign,
   Filter,
   Calendar,
-  User,
-  Phone,
-  Table as TableIcon
+  TableIcon
 } from "lucide-react";
-import { OrdersApi } from "@/entities/orders/api/ordersApi";
-import { Order, OrderItem } from "@/shared/types/orders";
+import { useOrders } from "@/entities/orders/hooks/useOrders";
+import { Order, OrderItem, ORDER_STATUSES, PaymentRequest } from "@/shared/types/orders";
+import { ToastContainer, ToastProps } from "@/shared/ui/toast";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
+
+// Модальное окно для обработки платежей
+const PaymentModal = ({ order, isOpen, onClose, onPayment }: { 
+  order: Order | null; 
+  isOpen: boolean; 
+  onClose: () => void;
+  onPayment: (orderId: string, paymentData: PaymentRequest) => void;
+}) => {
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed'>('cash');
+  const [cashAmount, setCashAmount] = useState<string>('');
+  const [cardAmount, setCardAmount] = useState<string>('');
+  const [discountAmount, setDiscountAmount] = useState<string>('');
+
+  if (!isOpen || !order) return null;
+
+  const totalAmount = Number(order.total_amount);
+  const discount = Number(discountAmount) || 0;
+  const finalTotal = totalAmount - discount;
+
+  const handleSubmit = () => {
+    const paymentData: PaymentRequest = { 
+      paymentMethod,
+      discountAmount: formatAsDecimal(discountAmount)
+    };
+
+    if (paymentMethod === 'cash') {
+      paymentData.cashAmount = formatAsDecimal(cashAmount || finalTotal);
+    } else if (paymentMethod === 'card') {
+      paymentData.cardAmount = formatAsDecimal(cardAmount || finalTotal);
+    } else if (paymentMethod === 'mixed') {
+      paymentData.cashAmount = formatAsDecimal(cashAmount);
+      paymentData.cardAmount = formatAsDecimal(cardAmount);
+    }
+
+    onPayment(order.id, paymentData);
+    onClose();
+    // Сброс формы
+    setPaymentMethod('cash');
+    setCashAmount('');
+    setCardAmount('');
+    setDiscountAmount('');
+  };
+
+  // Функция для форматирования чисел как decimal
+  const formatAsDecimal = (value: string | number): number => {
+    const num = Number(value) || 0;
+    // Округляем до 2 знаков после запятой для корректного decimal формата
+    return Math.round(num * 100) / 100;
+  };
+
+  const canSubmit = () => {
+    if (paymentMethod === 'mixed') {
+      const cash = Number(cashAmount) || 0;
+      const card = Number(cardAmount) || 0;
+      return (cash + card) >= finalTotal;
+    }
+    return true;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Обработка платежа</h2>
+            <Button variant="ghost" onClick={onClose} size="sm">
+              <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
+          </div>
+          
+          <div className="mb-4">
+            <p className="text-gray-600 mb-2 text-sm sm:text-base">Заказ #{order.order_number}</p>
+            <p className="text-xs sm:text-sm text-gray-500">Сумма: ₽{totalAmount.toFixed(2)}</p>
+          </div>
+
+          {/* Метод оплаты */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Метод оплаты</label>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="cash"
+                  checked={paymentMethod === 'cash'}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'card' | 'mixed')}
+                  className="mr-2"
+                />
+                <span className="text-sm">Наличные</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="card"
+                  checked={paymentMethod === 'card'}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'card' | 'mixed')}
+                  className="mr-2"
+                />
+                <span className="text-sm">Банковская карта</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="mixed"
+                  checked={paymentMethod === 'mixed'}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'card' | 'mixed')}
+                  className="mr-2"
+                />
+                <span className="text-sm">Смешанная оплата</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Скидка */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Скидка (₽)</label>
+            <input
+              type="number"
+              placeholder="0.00"
+              value={discountAmount}
+              onChange={(e) => setDiscountAmount(e.target.value)}
+              min="0"
+              max={totalAmount}
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Поля для ввода сумм в зависимости от метода */}
+          {paymentMethod === 'cash' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Сумма наличными</label>
+              <input
+                type="number"
+                placeholder={finalTotal.toFixed(2)}
+                value={cashAmount}
+                onChange={(e) => setCashAmount(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          )}
+
+          {paymentMethod === 'card' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Сумма картой</label>
+              <input
+                type="number"
+                placeholder={finalTotal.toFixed(2)}
+                value={cardAmount}
+                onChange={(e) => setCardAmount(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          )}
+
+          {paymentMethod === 'mixed' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Сумма наличными</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={cashAmount}
+                  onChange={(e) => setCashAmount(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Сумма картой</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={cardAmount}
+                  onChange={(e) => setCardAmount(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Итоговая сумма */}
+          <div className="mb-6 p-3 bg-gray-50 rounded-lg">
+            <div className="flex justify-between text-sm">
+              <span>Итого к оплате:</span>
+              <span className="font-bold text-green-600">₽{finalTotal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Кнопки */}
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Отмена
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={!canSubmit()}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              Обработать платеж
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("today");
-  const defaultLocationId = '2';
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [pending, cooking, ready, completed, cancelled] = await Promise.all([
-        OrdersApi.getPendingOrders(defaultLocationId),
-        OrdersApi.getCookingOrders(defaultLocationId),
-        OrdersApi.getReadyOrders(defaultLocationId),
-        OrdersApi.getCompletedOrders?.(defaultLocationId) || Promise.resolve([]),
-        OrdersApi.getCancelledOrders?.(defaultLocationId) || Promise.resolve([])
-      ]);
-      const allOrders = [...pending, ...cooking, ...ready, ...completed, ...cancelled];
-      setOrders(allOrders);
-      setFilteredOrders(allOrders);
+      // Здесь будет вызов API для получения заказов
+      // Пока используем моковые данные
+      const mockOrders: Order[] = [
+        {
+          id: '1',
+          order_number: '1234',
+          status: 'pending',
+          total_amount: '1250.00',
+          created_at: new Date().toISOString(),
+          customer_name: 'Иван Иванов',
+          customer_phone: '+7 (999) 123-45-67',
+          table_number: '5',
+          order_type: 'dine_in',
+          guest_count: 2,
+          notes: 'Без лука'
+        }
+      ];
+      setOrders(mockOrders);
+      setFilteredOrders(mockOrders);
     } catch (err) {
       setError('Ошибка загрузки заказов');
-      setOrders([]);
-      setFilteredOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    let filtered = orders;
-
-    // Фильтр по поиску
-    if (searchTerm) {
-      filtered = filtered.filter(order => 
-        order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer_phone?.includes(searchTerm)
-      );
-    }
-
-    // Фильтр по статусу
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
-
-    // Фильтр по дате
-    if (dateFilter !== "all") {
-      const today = new Date();
-      const orderDate = new Date();
-      
-      switch (dateFilter) {
-        case "today":
-          filtered = filtered.filter(order => {
-            orderDate.setTime(order.created_at ? new Date(order.created_at).getTime() : 0);
-            return orderDate.toDateString() === today.toDateString();
-          });
-          break;
-        case "week":
-          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-          filtered = filtered.filter(order => {
-            orderDate.setTime(order.created_at ? new Date(order.created_at).getTime() : 0);
-            return orderDate >= weekAgo;
-          });
-          break;
-        case "month":
-          const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-          filtered = filtered.filter(order => {
-            orderDate.setTime(order.created_at ? new Date(order.created_at).getTime() : 0);
-            return orderDate >= monthAgo;
-          });
-          break;
-      }
-    }
-
-    setFilteredOrders(filtered);
-  }, [orders, searchTerm, statusFilter, dateFilter]);
-
   const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      cooking: 'bg-orange-100 text-orange-800 border-orange-200',
-      ready: 'bg-green-100 text-green-800 border-green-200',
-      completed: 'bg-blue-100 text-blue-800 border-blue-200',
-      cancelled: 'bg-red-100 text-red-800 border-red-200'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+    switch (status) {
+      case 'pending': return 'bg-yellow-500';
+      case 'cooking': return 'bg-blue-500';
+      case 'ready': return 'bg-green-500';
+      case 'completed': return 'bg-gray-500';
+      case 'cancelled': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
   };
 
   const getStatusText = (status: string) => {
-    const texts: { [key: string]: string } = {
-      pending: 'Ожидает',
-      cooking: 'Готовится',
-      ready: 'Готово',
-      completed: 'Завершен',
-      cancelled: 'Отменен'
-    };
-    return texts[status] || status;
+    switch (status) {
+      case 'pending': return 'Ожидает';
+      case 'cooking': return 'Готовится';
+      case 'ready': return 'Готов';
+      case 'completed': return 'Завершен';
+      case 'cancelled': return 'Отменен';
+      default: return status;
+    }
   };
 
   const getStatusIcon = (status: string) => {
-    const icons: { [key: string]: React.ReactElement } = {
-      pending: <Clock className="w-4 h-4" />,
-      cooking: <Clock className="w-4 h-4" />,
-      ready: <CheckCircle className="w-4 h-4" />,
-      completed: <CheckCircle className="w-4 h-4" />,
-      cancelled: <XCircle className="w-4 h-4" />
-    };
-    return icons[status] || <Clock className="w-4 h-4" />;
-  };
-
-  const handleViewOrder = (order: Order) => {
-    // Здесь можно добавить модальное окно или переход к детальному просмотру заказа
-    console.log('Просмотр заказа:', order);
-  };
-
-  const handlePrintOrder = (order: Order) => {
-    // Здесь можно добавить логику печати заказа
-    console.log('Печать заказа:', order);
+    switch (status) {
+      case 'pending': return <Clock className="w-6 h-6 text-white" />;
+      case 'cooking': return <Loader2 className="w-6 h-6 text-white animate-spin" />;
+      case 'ready': return <CheckCircle className="w-6 h-6 text-white" />;
+      case 'completed': return <CheckCircle className="w-6 h-6 text-white" />;
+      case 'cancelled': return <XCircle className="w-6 h-6 text-white" />;
+      default: return <Clock className="w-6 h-6 text-white" />;
+    }
   };
 
   const calculateTotal = (order: Order) => {
-    return order.orderItems?.reduce((total, item) => 
-      total + (item.price || 0) * (item.quantity || 1), 0
-    ) || 0;
+    return Number(order.total_amount) || 0;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Clock className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Загрузка заказов...</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p>Загрузка заказов...</p>
         </div>
       </div>
     );
@@ -217,7 +382,7 @@ export default function OrdersPage() {
                 <option value="all">Все статусы</option>
                 <option value="pending">Ожидает</option>
                 <option value="cooking">Готовится</option>
-                <option value="ready">Готово</option>
+                <option value="ready">Готов</option>
                 <option value="completed">Завершен</option>
                 <option value="cancelled">Отменен</option>
               </select>
@@ -346,25 +511,6 @@ export default function OrdersPage() {
                         </p>
                       </div>
                     )}
-
-                    <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewOrder(order)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Просмотр
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePrintOrder(order)}
-                      >
-                        <Printer className="w-4 h-4 mr-2" />
-                        Печать
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               ))

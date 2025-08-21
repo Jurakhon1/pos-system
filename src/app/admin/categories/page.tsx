@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { 
@@ -11,12 +11,12 @@ import {
   Trash2, 
   XCircle,
   ArrowLeft,
-  Loader2,
-  CheckCircle
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { useCategories } from "@/entities/categories/hooks/useCategories";
 import { CreateCategoryDto, UpdateCategoryDto } from "@/entities/categories/api/categoriesApi";
+import { Category } from "@/entities/categories/api/categoriesApi";
 
 // Модальное окно для создания/редактирования категории
 const CategoryModal = ({ 
@@ -26,7 +26,7 @@ const CategoryModal = ({
   onSave,
   isLoading
 }: { 
-  category: any; 
+  category: Category | null; 
   isOpen: boolean; 
   onClose: () => void;
   onSave: (data: CreateCategoryDto | UpdateCategoryDto) => void;
@@ -163,7 +163,7 @@ const DeleteConfirmModal = ({
   onDelete,
   isLoading
 }: { 
-  category: any; 
+  category: Category; 
   isOpen: boolean; 
   onClose: () => void;
   onDelete: (id: string) => void;
@@ -183,7 +183,7 @@ const DeleteConfirmModal = ({
           </div>
           
           <p className="text-gray-600 mb-6">
-            Вы уверены, что хотите удалить категорию "{category.name}"? 
+            Вы уверены, что хотите удалить категорию &quot;{category.name}&quot;? 
             Это действие нельзя отменить.
           </p>
 
@@ -217,11 +217,11 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    category: any;
+    category: Category | null;
   }>({ isOpen: false, category: null });
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
-    category: any;
+    category: Category | null;
   }>({ isOpen: false, category: null });
 
   // Используем реальный API
@@ -248,11 +248,11 @@ export default function CategoriesPage() {
     setModalState({ isOpen: true, category: null });
   };
 
-  const handleEditCategory = (category: any) => {
+  const handleEditCategory = (category: Category) => {
     setModalState({ isOpen: true, category });
   };
 
-  const handleDeleteCategory = (category: any) => {
+  const handleDeleteCategory = (category: Category) => {
     setDeleteModal({ isOpen: true, category });
   };
 
@@ -436,13 +436,15 @@ export default function CategoriesPage() {
         isLoading={isCreating || isUpdating}
       />
       
-      <DeleteConfirmModal
-        category={deleteModal.category}
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, category: null })}
-        onDelete={handleConfirmDelete}
-        isLoading={isDeleting}
-      />
+      {deleteModal.category && (
+        <DeleteConfirmModal
+          category={deleteModal.category}
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, category: null })}
+          onDelete={handleConfirmDelete}
+          isLoading={isDeleting}
+        />
+      )}
     </div>
   );
 }

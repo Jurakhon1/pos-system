@@ -1,6 +1,7 @@
+"use client"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { OrdersApi } from "../api/ordersApi";
-import { CreateOrder, CreateOrderFromCart } from "@/shared/types/orders";
+import { CreateOrder, CreateOrderFromCart, PaymentRequest } from "@/shared/types/orders";
 
 export const useOrders = () => {
   const queryClient = useQueryClient();
@@ -13,6 +14,25 @@ export const useOrders = () => {
   } = useQuery({
     queryKey: ["orders"],
     queryFn: OrdersApi.getOrders,
+  });
+
+  // Kitchen-specific queries
+  const usePendingOrders = (locationId: string) => useQuery({
+    queryKey: ["orders", "pending", locationId],
+    queryFn: () => OrdersApi.getPendingOrders(locationId),
+    enabled: !!locationId,
+  });
+
+  const useCookingOrders = (locationId: string) => useQuery({
+    queryKey: ["orders", "cooking", locationId],
+    queryFn: () => OrdersApi.getCookingOrders(locationId),
+    enabled: !!locationId,
+  });
+
+  const useReadyOrders = (locationId: string) => useQuery({
+    queryKey: ["orders", "ready", locationId],
+    queryFn: () => OrdersApi.getReadyOrders(locationId),
+    enabled: !!locationId,
   });
 
   const createOrderMutation = useMutation({
@@ -77,8 +97,32 @@ export const useOrders = () => {
   });
 
   const processPaymentMutation = useMutation({
-    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: { paymentMethod: 'cash' | 'card' | 'mixed'; cashAmount?: number; cardAmount?: number; discountAmount?: number } }) =>
+    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: PaymentRequest }) =>
       OrdersApi.processPayment(orderId, paymentData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  // Kitchen mutations
+  const startCookingOrderItemMutation = useMutation({
+    mutationFn: ({ orderId, itemId, cookId }: { orderId: string; itemId: string; cookId?: string }) =>
+      OrdersApi.startCookingOrderItem(orderId, itemId, cookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const markOrderItemReadyMutation = useMutation({
+    mutationFn: ({ orderId, itemId }: { orderId: string; itemId: string }) =>
+      OrdersApi.markOrderItemReady(orderId, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: (orderId: string) => OrdersApi.cancelOrder(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -89,6 +133,11 @@ export const useOrders = () => {
     isLoading,
     error,
     refetch,
+    // Kitchen queries
+    usePendingOrders,
+    useCookingOrders,
+    useReadyOrders,
+    // Mutations
     createOrder: createOrderMutation.mutate,
     createOrderFromCart: createOrderFromCartMutation.mutate,
     updateOrderStatus: updateOrderStatusMutation.mutate,
@@ -98,6 +147,10 @@ export const useOrders = () => {
     removeOrderItem: removeOrderItemMutation.mutate,
     updateOrderItem: updateOrderItemMutation.mutate,
     processPayment: processPaymentMutation.mutate,
+    startCookingOrderItem: startCookingOrderItemMutation.mutate,
+    markOrderItemReady: markOrderItemReadyMutation.mutate,
+    cancelOrder: cancelOrderMutation.mutate,
+    // Loading states
     isCreating: createOrderMutation.isPending,
     isCreatingFromCart: createOrderFromCartMutation.isPending,
     isUpdatingStatus: updateOrderStatusMutation.isPending,
@@ -107,6 +160,9 @@ export const useOrders = () => {
     isRemovingItem: removeOrderItemMutation.isPending,
     isUpdatingItem: updateOrderItemMutation.isPending,
     isProcessingPayment: processPaymentMutation.isPending,
+    isStartingCooking: startCookingOrderItemMutation.isPending,
+    isMarkingReady: markOrderItemReadyMutation.isPending,
+    isCancelling: cancelOrderMutation.isPending,
   };
 };
 

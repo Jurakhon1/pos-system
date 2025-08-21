@@ -9,7 +9,10 @@ import api from "@/shared/api/axios";
   zone:string
   created_at:string
   updated_at:string
-  location:any
+  location?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface CreateTableDto {
@@ -70,7 +73,7 @@ export const tableApi = {
   },
 
   // Изменить статус стола
-  async updateTableStatus(id: string, status: Table['is_active']) {
+  async updateTableStatus(id: string, status: boolean) {
     const { data } = await api.patch<Table>(`/tables/${id}/status`, { status });
     return data;
   }

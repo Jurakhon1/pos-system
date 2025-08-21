@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { 
@@ -14,13 +14,12 @@ import {
   Loader2,
   XCircle,
   Clock,
-  Filter,
   AlertTriangle,
   CheckCircle
 } from "lucide-react";
 import Link from "next/link";
 import { useKitchen } from "@/entities/kitchen";
-import { CreateKitchenStationDto, UpdateKitchenStationDto } from "@/entities/kitchen";
+import { CreateKitchenStationDto, UpdateKitchenStationDto, KitchenStation } from "@/entities/kitchen";
 
 // Enhanced Modal for creating/editing kitchen station
 const StationModal = ({ 
@@ -30,7 +29,7 @@ const StationModal = ({
   onSave,
   isLoading
 }: { 
-  station: any; 
+  station: KitchenStation | null; 
   isOpen: boolean; 
   onClose: () => void;
   onSave: (data: CreateKitchenStationDto | UpdateKitchenStationDto) => void;
@@ -61,7 +60,22 @@ const StationModal = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    if (station) {
+      // Update existing station
+      onSave({
+        name: formData.name,
+        description: formData.description,
+        is_active: formData.is_active
+      } as UpdateKitchenStationDto);
+    } else {
+      // Create new station
+      onSave({
+        location_id: "default", // This should be passed from parent or selected
+        name: formData.name,
+        description: formData.description,
+        is_active: formData.is_active
+      } as CreateKitchenStationDto);
+    }
   };
 
   if (!isOpen) return null;
@@ -197,7 +211,7 @@ const DeleteConfirmModal = ({
   onDelete,
   isLoading
 }: { 
-  station: any; 
+  station: KitchenStation | null; 
   isOpen: boolean; 
   onClose: () => void;
   onDelete: (id: string) => void;
@@ -226,7 +240,7 @@ const DeleteConfirmModal = ({
               <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-red-800">
                 <p className="font-medium mb-1">Внимание!</p>
-                <p>Вы собираетесь удалить станцию <strong>"{station.name}"</strong>. Все связанные данные будут потеряны.</p>
+                <p>Вы собираетесь удалить станцию <strong>&quot;{station.name}&quot;</strong>. Все связанные данные будут потеряны.</p>
               </div>
             </div>
           </div>
@@ -272,11 +286,11 @@ export default function KitchenPage() {
   const [sortBy, setSortBy] = useState<"name" | "created" | "status">("name");
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    station: any;
+    station: KitchenStation | null;
   }>({ isOpen: false, station: null });
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
-    station: any;
+    station: KitchenStation | null;
   }>({ isOpen: false, station: null });
 
   const {
@@ -315,11 +329,11 @@ export default function KitchenPage() {
     setModalState({ isOpen: true, station: null });
   };
 
-  const handleEditStation = (station: any) => {
+  const handleEditStation = (station: KitchenStation) => {
     setModalState({ isOpen: true, station });
   };
 
-  const handleDeleteStation = (station: any) => {
+  const handleDeleteStation = (station: KitchenStation) => {
     setDeleteModal({ isOpen: true, station });
   };
 
@@ -446,7 +460,7 @@ export default function KitchenPage() {
             {/* Sort Dropdown */}
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as "name" | "created" | "status")}
               className="h-12 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="name">По названию</option>

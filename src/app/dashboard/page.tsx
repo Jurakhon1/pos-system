@@ -1,26 +1,27 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { 
   ShoppingCart, 
   Package, 
   BarChart3, 
   Users, 
-  ArrowUp,
+  TrendingUp,
   Clock
 } from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
 
 export default function DashboardPage() {
-  // Здесь можно добавить реальные данные из API
   const stats = [
     {
       title: "Продажи сегодня",
       value: "₽ 45,230",
       change: "+12.5%",
       icon: ShoppingCart,
-      color: "text-green-600"
+      color: "text-blue-600"
     },
     {
       title: "Заказы в ожидании",
@@ -34,7 +35,7 @@ export default function DashboardPage() {
       value: "12",
       change: "+3",
       icon: Users,
-      color: "text-blue-600"
+      color: "text-green-600"
     },
     {
       title: "Товары в наличии",
@@ -97,7 +98,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ArrowUp className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5" />
                 Быстрые действия
               </CardTitle>
             </CardHeader>
@@ -115,7 +116,6 @@ export default function DashboardPage() {
                   <div className="text-sm text-gray-500">В каталог</div>
                 </button>
                 <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                  <div className="font-medium text-gray-900">Отчеты</div>
                   <div className="text-sm text-gray-500">Просмотр</div>
                 </button>
                 <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">

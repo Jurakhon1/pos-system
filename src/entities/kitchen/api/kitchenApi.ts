@@ -1,4 +1,5 @@
 import api from "@/shared/api/axios";
+import { Order } from "@/shared/types/orders";
 
 export interface KitchenStation {
   id: string;
@@ -38,8 +39,8 @@ export interface UpdateKitchenStationDto {
 
 export interface KitchenDashboard {
   stations: KitchenStation[];
-  activeOrders: any[];
-  pendingOrders: any[];
+  activeOrders: Order[];
+  pendingOrders: Order[];
 }
 
 export const kitchenApi = {
@@ -80,7 +81,7 @@ export const kitchenApi = {
   },
 
   // Get orders for specific station
-  getOrdersForStation: async (stationId: string): Promise<any[]> => {
+  getOrdersForStation: async (stationId: string): Promise<Order[]> => {
     const response = await api.get(`/kitchen/stations/${stationId}/orders`);
     return response.data;
   },

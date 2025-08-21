@@ -1,23 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCart } from "@/entities/cart";
-import { useOrderCreation, OrderFormData } from "@/features/order-creation/hooks/useOrderCreation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { 
+  ShoppingCart, 
+  Package, 
+  BarChart3, 
   Users, 
-  Phone, 
-  ClipboardList, 
-  ShoppingCart,
-  Plus,
-  Minus,
-  Trash2,
-  Table as TableIcon,
-  User,
-  Calendar,
-  FileText,
-  CreditCard,
   Search,
   Filter,
   X,
@@ -25,7 +16,15 @@ import {
   MapPin,
   Receipt,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Minus,
+  Plus,
+  Trash2,
+  CreditCard,
+  ClipboardList,
+  FileText,
+  Table as TableIcon,
+  User
 } from "lucide-react";
 import Image from "next/image";
 import { CartItem } from "@/entities/cart";
@@ -35,6 +34,8 @@ import { useTables } from "@/entities/tables/hooks/useTables";
 import { Table as TableType } from "@/entities/tables/api/tableApi";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
+import { useCart } from "@/entities/cart/hooks/useCart";
+import { useOrderCreation } from "@/features/order-creation/hooks/useOrderCreation";
 
 interface Category {
   id: string;
@@ -51,53 +52,60 @@ interface MenuItem {
 }
 
 export default function POSPage() {
-  const { menuItems } = useMenuItems();
-  const { categories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [tableNumber, setTableNumber] = useState<number | null>(null);
-  const [tableId, setTableId] = useState<string | null>(null);
   const [guestCount, setGuestCount] = useState(1);
+  const [tableId, setTableId] = useState<string>("");
+  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
   const [searchQuery, setSearchQuery] = useState("");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+
   const { tables, isLoading, error, fetchTables, updateTableStatus } = useTables();
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
+  const { menuItems, categories } = useMenuItems();
+
+  useEffect(() => {
+    fetchTables();
+  }, [fetchTables]);
 
   const handleCreateOrder = async () => {
-    const formData: OrderFormData = {
-      customerName: customerName || "Гость",
-      customerPhone: customerPhone || "",
+    const formData = {
+      locationId: '1', // Default location
+      tableId: orderType === 'dine_in' ? tableId : undefined,
+      orderType,
+      customerName,
+      customerPhone,
       guestCount,
       notes,
-      orderType
+      items: cartItems.map(item => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        specialInstructions: ''
+      }))
     };
 
-    createOrder(
-      cartItems,
-      tableId,
-      formData,
-      (data) => {
-        clearCart();
-        setCustomerName("");
-        setCustomerPhone("");
-        setTableNumber(null);
-        setTableId(null);
-        setGuestCount(1);
-        setNotes("");
-        setOrderType('dine_in');
-        setShowOrderForm(false);
-        setShowCustomerForm(false);
-        alert("Заказ успешно создан!");
-      },
-      (error) => {
-        alert(`Ошибка создания заказа: ${error.message}`);
-      }
-    );
+    try {
+      await createOrder(formData);
+      clearCart();
+      setCustomerName("");
+      setCustomerPhone("");
+      setGuestCount(1);
+      setTableId("");
+      setTableNumber(null);
+      setNotes("");
+      setOrderType('dine_in');
+      setShowOrderForm(false);
+      setShowCustomerForm(false);
+      alert("Заказ успешно создан!");
+    } catch (error) {
+      console.error("Ошибка создания заказа:", error);
+      alert("Ошибка создания заказа");
+    }
   };
 
   const totalAmount = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0);

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ProductsApi, Product, CreateProductDto, UpdateProductDto } from "../api/productsApi";
+import { ProductsApi, CreateProductDto, UpdateProductDto } from "../api/productsApi";
 import { toast } from "sonner";
 
 export const useProducts = () => {
@@ -24,7 +24,7 @@ export const useProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Продукт успешно создан");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Ошибка при создании продукта: ${error.message}`);
     },
   });
@@ -37,7 +37,7 @@ export const useProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Продукт успешно обновлен");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Ошибка при обновлении продукта: ${error.message}`);
     },
   });
@@ -49,7 +49,7 @@ export const useProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Продукт успешно удален");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Ошибка при удалении продукта: ${error.message}`);
     },
   });
@@ -62,7 +62,7 @@ export const useProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Статус продукта изменен");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Ошибка при изменении статуса: ${error.message}`);
     },
   });
@@ -75,7 +75,7 @@ export const useProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Запасы обновлены");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Ошибка при обновлении запасов: ${error.message}`);
     },
   });
@@ -88,7 +88,7 @@ export const useProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Изображение обновлено");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Ошибка при обновлении изображения: ${error.message}`);
     },
   });

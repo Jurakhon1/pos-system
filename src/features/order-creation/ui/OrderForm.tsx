@@ -16,16 +16,12 @@ interface OrderFormData {
 
 interface OrderFormProps {
   selectedTable: string | null;
-  onTableSelect: (tableId: string) => void;
-  onTableClear: () => void;
   onSubmit: (formData: OrderFormData) => void;
   isSubmitting: boolean;
 }
 
 export const OrderForm = ({
   selectedTable,
-  onTableSelect,
-  onTableClear,
   onSubmit,
   isSubmitting
 }: OrderFormProps) => {
