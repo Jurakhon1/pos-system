@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/entities/auth/hooks/useAuth";
-import { ROLE_ACCESS, USER_ROLES } from "@/shared/types/auth";
-import { Loader2, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, Shield } from "lucide-react";
 
 interface RoleGuardProps {
   children: React.ReactNode;

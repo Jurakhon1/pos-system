@@ -8,20 +8,11 @@ import {
   Search, 
   Clock, 
   User, 
-  ShoppingCart,
-  Eye,
-  Trash2,
-  Plus,
   Table,
   Phone,
-  Users,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   Loader2,
-  CreditCard,
-  DollarSign,
-  Filter,
   Calendar
 } from "lucide-react";
 import { useOrders } from "@/entities/orders/hooks/useOrders";
@@ -262,23 +253,9 @@ export default function OrdersPage() {
       setError(null);
       // Здесь будет вызов API для получения заказов
       // Пока используем моковые данные
-      const mockOrders: Order[] = [
-        {
-          id: '1',
-          order_number: '1234',
-          status: 'pending',
-          total_amount: '1250.00',
-          created_at: new Date().toISOString(),
-          customer_name: 'Иван Иванов',
-          customer_phone: '+7 (999) 123-45-67',
-          table_number: '5',
-          order_type: 'dine_in',
-          guest_count: 2,
-          notes: 'Без лука'
-        }
-      ];
-      setOrders(mockOrders);
-      setFilteredOrders(mockOrders);
+     
+      setOrders([]);
+      setFilteredOrders([]);
     } catch (err) {
       setError('Ошибка загрузки заказов');
     } finally {

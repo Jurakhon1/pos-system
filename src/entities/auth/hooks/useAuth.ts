@@ -43,7 +43,7 @@ export const useAuth = () => {
     if (!role) return false;
     
     const allowedPages = ROLE_ACCESS[role];
-    return allowedPages.includes(pagePath as any);
+    return allowedPages.includes(pagePath as never);
   };
 
   const getDefaultPageForRole = (): string => {

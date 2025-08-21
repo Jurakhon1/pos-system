@@ -1,19 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { 
   ShoppingCart, 
-  Package, 
-  BarChart3, 
-  Users, 
+
   Search,
   Filter,
   Clock,
   CheckCircle,
-  ArrowRight,
   Minus,
   Plus,
   Trash2,
@@ -64,7 +60,8 @@ export default function POSPage() {
   const { tables, isLoading, error, fetchTables, updateTableStatus } = useTables();
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
-  const { menuItems, categories } = useMenuItems();
+  const { menuItems } = useMenuItems();
+  const { categories } = useCategories();
 
   useEffect(() => {
     fetchTables();
@@ -72,24 +69,19 @@ export default function POSPage() {
 
   const handleCreateOrder = async () => {
     const formData = {
-      locationId: '1', // Default location
-      tableId: orderType === 'dine_in' ? tableId : undefined,
-      orderType,
       customerName,
       customerPhone,
       guestCount,
       notes,
-      items: cartItems.map(item => ({
-        menuItemId: item.menuItemId,
-        quantity: item.quantity,
-        specialInstructions: ''
-      }))
+      orderType
     };
 
     try {
-      await createOrder(formData);
+      await createOrder(cartItems, tableId || null, formData);
       clearCart();
       setCustomerName("");
+      setTableId("");
+      
       setCustomerPhone("");
       setGuestCount(1);
       setTableId("");
@@ -480,10 +472,10 @@ export default function POSPage() {
                       <select
                         value={tableId || ""}
                         onChange={(e) => {
-                          const value = e.target.value || null;
+                          const value = e.target.value || "";
                           setTableId(value);
                           const selectedTable = tables?.find((table) => table.id === value);
-                          setTableNumber(selectedTable ? selectedTable.number : null);
+                          setTableNumber(selectedTable ? selectedTable.number.toString() : null);
                         }}
                         className="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
