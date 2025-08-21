@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { useOrders } from "@/entities/orders/hooks/useOrders";
 import { useAuth } from "@/entities/auth/hooks/useAuth";
+import { RoleGuard } from "@/shared/components/RoleGuard";
+import { USER_ROLES } from "@/shared/types/auth";
 
 // Вспомогательные функции для работы со статусами
 const getStatusColor = (status: string) => {
@@ -204,45 +206,46 @@ export default function KitchenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-3">
-                             <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                 <Package className="h-8 w-8" />
-               </div>
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-bold">Кухня</h1>
-                <p className="text-orange-100 text-lg">Управление заказами и приготовлением</p>
+    <RoleGuard requiredRoles={[USER_ROLES.CHEF, USER_ROLES.COOK]}>
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Package className="h-8 w-8" />
+                </div>
+                <div>
+                  <h1 className="text-3xl lg:text-4xl font-bold">Кухня</h1>
+                  <p className="text-orange-100 text-lg">Управление заказами и приготовлением</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetch()}
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-              >
-                                                                   <Clock className="w-4 h-4 mr-2" />
-                Обновить
-              </Button>
               
-              <Button
-                variant={autoRefresh ? "default" : "outline"}
-                size="sm"
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={autoRefresh ? "bg-white text-orange-600 hover:bg-white/90" : "bg-white/20 border-white/30 text-white hover:bg-white/30"}
-              >
-                                 <Clock className="w-4 h-4 mr-2" />
-                {autoRefresh ? "Авто" : "Ручное"}
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetch()}
+                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Обновить
+                </Button>
+                
+                <Button
+                  variant={autoRefresh ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={autoRefresh ? "bg-white text-orange-600 hover:bg-white/90" : "bg-white/20 border-white/30 text-white hover:bg-white/30"}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  {autoRefresh ? "Авто" : "Ручное"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Error Display */}
@@ -470,8 +473,83 @@ export default function KitchenPage() {
             </CardContent>
           </Card>
         )}
+        
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 mx-4 mt-4 rounded border border-red-200 dark:border-red-800">
+            {error}
+            <Button variant="outline" size="sm" onClick={refetch} className="ml-2">
+              Повторить
+            </Button>
+          </div>
+        )}
+
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Нет заказов</h3>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOrders.map((order) => (
+                <Card key={order.id}>
+                  <CardHeader>
+                    <div className="flex justify-between">
+                      <CardTitle className="text-lg">
+                        {order.order_number || `Заказ #${order.id.slice(-6)}`}
+                      </CardTitle>
+                     
+                    </div>
+                    <div className="flex w-full">
+                    <Badge className={`${getStatusColor(order.status)} w-full flex`}>
+                      {getStatusIcon(order.status)}
+                      <span className="ml-1">{getStatusText(order.status)}</span>
+                    </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {order.orderItems?.map((item) => (
+                        <div key={item.id} className="flex justify-between p-3 border border-border rounded bg-card">
+                          <div>
+                            <h4 className="font-medium text-card-foreground">{item.menuItem?.name || 'Неизвестно'}</h4>
+                            <span className="text-sm text-muted-foreground">x{item.quantity}</span>
+                          </div>
+                          <div>
+                            {item.status === 'pending' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStartCookingItem(order.id, item.id)}
+                              >
+                                Готовить
+                              </Button>
+                            )}
+                            {item.status === 'cooking' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkItemReady(order.id, item.id)}
+                                className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
+                              >
+                                Готово
+                              </Button>
+                            )}
+                            {item.status === 'ready' && (
+                              <span className="text-sm text-green-600 dark:text-green-400">✓ Готово</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </RoleGuard>
   );
 }
 

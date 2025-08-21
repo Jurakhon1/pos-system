@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { authApi } from "../api/authApi";
+import { USER_ROLES, ROLE_ACCESS, ROLE_DEFAULT_PAGE, UserRole } from "@/shared/types/auth";
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
@@ -27,6 +28,34 @@ export const useAuth = () => {
     const locationId = localStorage.getItem("locationId");
     console.log('🔍 getCurrentLocationId called, result:', locationId);
     return locationId;
+  };
+
+  const getCurrentUserRole = (): UserRole | null => {
+    const role = localStorage.getItem("role");
+    if (role && Object.values(USER_ROLES).includes(role as UserRole)) {
+      return role as UserRole;
+    }
+    return null;
+  };
+
+  const hasAccessToPage = (pagePath: string): boolean => {
+    const role = getCurrentUserRole();
+    if (!role) return false;
+    
+    const allowedPages = ROLE_ACCESS[role];
+    return allowedPages.includes(pagePath as any);
+  };
+
+  const getDefaultPageForRole = (): string => {
+    const role = getCurrentUserRole();
+    if (!role) return '/login';
+    
+    return ROLE_DEFAULT_PAGE[role];
+  };
+
+  const redirectToDefaultPage = () => {
+    const defaultPage = getDefaultPageForRole();
+    router.push(defaultPage);
   };
 
   const loginMutation = useMutation({
@@ -69,8 +98,9 @@ export const useAuth = () => {
       // Инвалидируем кеш пользователя
       queryClient.invalidateQueries({ queryKey: ["user"] });
       
-      // Перенаправляем на dashboard
-      router.push("/dashboard");
+      // Перенаправляем на страницу по умолчанию для роли
+      const defaultPage = getDefaultPageForRole();
+      router.push(defaultPage);
     },
     onError: (error) => {
       console.error("Login failed:", error);
@@ -121,6 +151,10 @@ export const useAuth = () => {
     isAuthenticated,
     getCurrentUserId,
     getCurrentLocationId,
+    getCurrentUserRole,
+    hasAccessToPage,
+    getDefaultPageForRole,
+    redirectToDefaultPage,
     isLoading: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
   };

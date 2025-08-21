@@ -26,6 +26,7 @@ import {
 import { cn } from "@/shared/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { useAuth } from "@/entities/auth/hooks/useAuth"
+import { ROLE_ACCESS, USER_ROLES } from "@/shared/types/auth"
 
 interface POSSidebarProps {
   className?: string
@@ -34,45 +35,59 @@ interface POSSidebarProps {
 export default function POSSidebar({ className }: POSSidebarProps) {
   const { open: isOpen } = useSidebar()
   const pathname = usePathname()
-  const { logout } = useAuth()
+  const { logout, getCurrentUserRole, hasAccessToPage } = useAuth()
   
   const navigationItems = [
     {
       href: "/dashboard",
       icon: Home,
-      label: "Главная"
+      label: "Главная",
+      roles: [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
+    },
+    {
+      href: "/pos",
+      icon: ShoppingCart,
+      label: "POS",
+      roles: [USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/orders",
       icon: Receipt,
-      label: "Заказы"
+      label: "Заказы",
+      roles: [USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
-    // {
-    //   href: "/sales",
-    //   icon: ShoppingCart,
-    //   label: "Продажи"
-    // },
     {
       href: "/kitchen",
       icon: Utensils,
-      label: "Кухня"
+      label: "Кухня",
+      roles: [USER_ROLES.CHEF, USER_ROLES.COOK, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/reports",
       icon: BarChart,
-      label: "Отчёты"
+      label: "Отчёты",
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/settings",
       icon: Settings,
-      label: "Настройки"
+      label: "Настройки",
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/admin",
       icon: Shield,
-      label: "Админ панель"
+      label: "Админ панель",
+      roles: [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN]
     }
   ]
+
+  // Фильтруем пункты меню на основе роли пользователя
+  const userRole = getCurrentUserRole();
+  const accessibleNavigationItems = navigationItems.filter(item => {
+    if (!userRole) return false;
+    return item.roles.includes(userRole as any);
+  });
 
   if (pathname === "/login" || pathname === "/register") {
     return null
@@ -93,6 +108,9 @@ export default function POSSidebar({ className }: POSSidebarProps) {
           {isOpen && (
             <div>
               <h2 className="text-2xl font-bold">Pos System</h2>
+              {userRole && (
+                <p className="text-sm text-gray-400 capitalize">{userRole}</p>
+              )}
             </div>
           )}
         </SidebarHeader>
@@ -100,7 +118,7 @@ export default function POSSidebar({ className }: POSSidebarProps) {
         {/* Content */}
         <SidebarContent className={cn("py-4", isOpen ? "px-2" : "px-1")}>
           <SidebarMenu className="space-y-1">
-            {navigationItems.map((item) => {
+            {accessibleNavigationItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
               
