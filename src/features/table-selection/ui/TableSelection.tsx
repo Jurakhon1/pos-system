@@ -3,8 +3,14 @@
 import { useState, useEffect } from "react";
 import { Table } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { tableApi, Table as TableType } from "@/entities/tables";
 import { useAuth } from "@/entities/auth/hooks/useAuth";
+
+interface TableType {
+  id: string;
+  number: string;
+  location_id: string;
+  is_active: boolean;
+}
 
 interface TableSelectionProps {
   selectedTable: string | null;
@@ -33,7 +39,15 @@ export const TableSelection = ({
           setTables([]);
           return;
         }
-        
+        const tableApi = {
+          getTables: async (locationId: string): Promise<TableType[]> => {
+            const response = await fetch(`/api/tables?locationId=${locationId}`);
+            if (!response.ok) {
+              throw new Error('Failed to fetch tables');
+            }
+            return response.json();
+          }
+        };
         const tablesData = await tableApi.getTables(locationId);
         console.log('✅ Loaded tables:', tablesData);
         console.log('📊 Tables count:', tablesData.length);

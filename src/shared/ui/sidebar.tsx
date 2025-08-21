@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
 
 import { useIsMobile } from "@/shared/hooks/use-mobile"
 import { cn } from "@/shared/lib/utils"
@@ -82,8 +81,10 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      // This sets the cookie to keep the sidebar state (only on client).
+      if (typeof window !== 'undefined') {
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      }
     },
     [setOpenProp, open]
   )
@@ -273,7 +274,6 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

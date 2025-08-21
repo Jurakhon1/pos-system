@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -13,6 +14,8 @@ import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  
   const stats = [
     {
       title: "Продажи",
@@ -104,7 +107,7 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <button 
-                  onClick={() => window.location.href = '/pos'}
+                  onClick={() => router.push('/pos')}
                   className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left cursor-pointer"
                 >
                   <div className="font-medium text-gray-900">Новый заказ</div>

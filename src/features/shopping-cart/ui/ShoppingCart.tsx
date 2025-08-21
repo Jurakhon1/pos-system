@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { CartItem } from "@/entities/cart";
-import { TableSelection } from "@/features/table-selection";
+import { TableSelection } from "@/features/table-selection/ui/TableSelection";
 
 interface ShoppingCartProps {
   items: CartItem[];

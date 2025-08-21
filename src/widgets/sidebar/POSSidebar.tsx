@@ -2,12 +2,7 @@
 
 import * as React from "react"
 import { 
-  Home, 
-  Utensils, 
-  BarChart, 
   Settings, 
-  Receipt,
-  LogOut,
   Shield
 } from "lucide-react"
 import { usePathname } from "next/navigation"
@@ -40,43 +35,36 @@ export default function POSSidebar({ className }: POSSidebarProps) {
   const navigationItems = [
     {
       href: "/dashboard",
-      icon: Home,
       label: "Главная",
       roles: [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/pos",
-      icon: ShoppingCart,
       label: "POS",
       roles: [USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/orders",
-      icon: Receipt,
       label: "Заказы",
       roles: [USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/kitchen",
-      icon: Utensils,
       label: "Кухня",
       roles: [USER_ROLES.CHEF, USER_ROLES.COOK, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/reports",
-      icon: BarChart,
       label: "Отчёты",
       roles: [USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/settings",
-      icon: Settings,
       label: "Настройки",
       roles: [USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/admin",
-      icon: Shield,
       label: "Админ панель",
       roles: [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN]
     }
@@ -119,7 +107,6 @@ export default function POSSidebar({ className }: POSSidebarProps) {
         <SidebarContent className={cn("py-4", isOpen ? "px-2" : "px-1")}>
           <SidebarMenu className="space-y-1">
             {accessibleNavigationItems.map((item) => {
-              const Icon = item.icon
               const isActive = pathname === item.href
               
               return (
@@ -141,7 +128,6 @@ export default function POSSidebar({ className }: POSSidebarProps) {
                             "flex items-center gap-3 w-full",
                             isOpen ? "px-3" : "justify-center px-0"
                           )}>
-                            <Icon className="w-5 h-5 shrink-0" />
                             {isOpen && (
                               <span className="font-medium text-sm truncate">
                                 {item.label}
@@ -182,7 +168,6 @@ export default function POSSidebar({ className }: POSSidebarProps) {
                   "flex items-center gap-3 w-full",
                   isOpen ? "px-0" : "justify-center px-0"
                 )}>
-                  <LogOut className="w-5 h-5 shrink-0" />
                   {isOpen && (
                     <span className="font-medium text-sm truncate">
                       Выйти

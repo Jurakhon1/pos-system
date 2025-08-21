@@ -49,9 +49,23 @@ export function useMenuItems(
   const [pagination, setPaginationState] = useState<MenuPaginationParams>({
     page: 1,
     limit: 50,
-    sort_by: 'display_order',
+    sort_by: 'name',
     sort_order: 'asc'
   });
+  // Определяем типы для параметров пагинации
+  interface MenuPaginationParams {
+    page: number;
+    limit: number;
+    sort_by?: 'name' | 'price' | 'cooking_time' | 'calories';
+    sort_order?: 'asc' | 'desc';
+  }
+
+  // Определяем типы для фильтров
+  interface MenuFilters {
+    is_available?: boolean;
+    category_id?: string;
+    search?: string;
+  }
 
   // Загрузка данных
   const loadData = useCallback(async () => {

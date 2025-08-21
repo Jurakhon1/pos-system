@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 export interface ToastProps {
   id: string;
@@ -28,9 +28,9 @@ const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProp
       case 'warning':
         return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
       case 'info':
-        return <Info className="w-5 h-5 text-blue-600" />;
+        return <XCircle className="w-5 h-5 text-blue-600" />;
       default:
-        return <Info className="w-5 h-5 text-blue-600" />;
+        return <XCircle className="w-5 h-5 text-blue-600" />;
     }
   };
 
@@ -61,7 +61,7 @@ const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProp
           onClick={() => onClose(id)}
           className="text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <X className="w-4 h-4" />
+          <XCircle className="w-4 h-4" />
         </button>
       </div>
     </div>

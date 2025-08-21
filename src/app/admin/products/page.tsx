@@ -420,6 +420,13 @@ export default function ProductsPage() {
     setDeleteModal({ isOpen: false, product: null });
   };
 
+  // Функция для обновления страницы
+  const handleRetry = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
   // Обработка ошибок
   if (error) {
     return (
@@ -432,7 +439,7 @@ export default function ProductsPage() {
           <p className="text-gray-500 mb-4">
             {error.message || "Произошла ошибка при загрузке данных"}
           </p>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={handleRetry}>
             Попробовать снова
           </Button>
         </div>

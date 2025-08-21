@@ -5,7 +5,7 @@ import { ProductCatalogComponent } from "@/features/product-catalog/ui/ProductCa
 import { ShoppingCartComponent } from "@/features/shopping-cart/ui/ShoppingCart";
 import { OrderForm } from "@/features/order-creation/ui/OrderForm";
 import { AnimatedNotification } from "@/features/notification";
-import { useProducts } from "@/entities/product";
+import { useProducts } from "@/entities/products/hooks/useProducts";
 import { useCategories } from "@/entities/categories/hooks/useCategories";
 import { useCart } from "@/entities/cart/hooks/useCart";
 import { useOrderCreation } from "@/features/order-creation/hooks/useOrderCreation";
@@ -109,8 +109,6 @@ export const POSPageComponent = () => {
         <div className="w-full max-w-2xl">
           <OrderForm
             selectedTable={selectedTable}
-            onTableSelect={(tableId) => setSelectedTable(tableId)}
-            onTableClear={() => setSelectedTable(null)}
             onSubmit={handleCreateOrder}
             isSubmitting={isCreating}
           />
@@ -127,6 +125,19 @@ export const POSPageComponent = () => {
     );
   }
 
+  // Convert Product[] to Products[] for ProductCatalog
+  const convertedProducts: Products[] = (products || []).map(product => ({
+    id: parseInt(product.id),
+    name: product.name,
+    description: product.description,
+    price: product.purchase_price,
+    category: {
+      id: parseInt(product.category.id),
+      name: product.category.name
+    },
+    imageUrl: undefined
+  }));
+
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
       {/* Уведомления */}
@@ -142,7 +153,7 @@ export const POSPageComponent = () => {
         {/* Левая сторона - Каталог товаров */}
         <div className="w-[70%] p-4">
           <ProductCatalogComponent
-            products={products || []}
+            products={convertedProducts}
             categories={categories || []}
             onAddToCart={handleAddToCart}
             isLoading={isLoading}
@@ -157,7 +168,6 @@ export const POSPageComponent = () => {
             selectedTable={selectedTable}
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeFromCart}
-            onClearCart={clearCart}
             onCheckout={handleCheckoutClick}
             onTableSelect={setSelectedTable}
             onTableClear={() => setSelectedTable(null)}

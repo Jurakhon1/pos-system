@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/entities/auth/hooks/useAuth";
 import { Loader2, Shield } from "lucide-react";
 
@@ -20,6 +20,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
 }) => {
   const { isAuthenticated, getCurrentUserRole, hasAccessToPage, redirectToDefaultPage } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
@@ -49,9 +50,8 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
         }
       }
 
-      // Проверяем доступ к текущей странице
-      const currentPath = window.location.pathname;
-      if (!hasAccessToPage(currentPath)) {
+      // Проверяем доступ к текущей странице (используем pathname из Next.js)
+      if (!hasAccessToPage(pathname)) {
         redirectToDefaultPage();
         return;
       }
@@ -63,7 +63,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
     // Небольшая задержка для корректной работы с localStorage
     const timer = setTimeout(checkAccess, 100);
     return () => clearTimeout(timer);
-  }, [isAuthenticated, getCurrentUserRole, hasAccessToPage, redirectToDefaultPage, requiredRoles, redirectTo, router]);
+  }, [isAuthenticated, getCurrentUserRole, hasAccessToPage, redirectToDefaultPage, requiredRoles, redirectTo, router, pathname]);
 
   if (isChecking) {
     return (
