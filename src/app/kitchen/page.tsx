@@ -6,6 +6,8 @@ import { Button } from "@/shared/ui/button";
 import { Clock, CheckCircle, Loader2, Package } from "lucide-react";
 import { OrdersApi } from "@/entities/orders/api/ordersApi";
 import { Order, OrderItem } from "@/shared/types/orders";
+import { RoleGuard } from "@/shared/components/RoleGuard";
+import { USER_ROLES } from "@/shared/types/auth";
 
 const Badge = ({ children, className }: { children: React.ReactNode; className?: string }) => (
   <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}>
@@ -113,81 +115,83 @@ export default function KitchenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 mx-4 mt-4 rounded border border-red-200 dark:border-red-800">
-          {error}
-          <Button variant="outline" size="sm" onClick={fetchOrders} className="ml-2">
-            Повторить
-          </Button>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Нет заказов</h3>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredOrders.map((order) => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <div className="flex justify-between">
-                    <CardTitle className="text-lg">
-                      {order.order_number || `Заказ #${order.id.slice(-6)}`}
-                    </CardTitle>
-                   
-                  </div>
-                  <div className="flex w-full">
-                  <Badge className={`${getStatusColor(order.status)} w-full flex`}>
-                    {getStatusIcon(order.status)}
-                    <span className="ml-1">{getStatusText(order.status)}</span>
-                  </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {order.orderItems?.map((item) => (
-                      <div key={item.id} className="flex justify-between p-3 border border-border rounded bg-card">
-                        <div>
-                          <h4 className="font-medium text-card-foreground">{item.menuItem?.name || 'Неизвестно'}</h4>
-                          <span className="text-sm text-muted-foreground">x{item.quantity}</span>
-                        </div>
-                        <div>
-                          {item.status === 'pending' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleStartCookingItem(order.id, item.id)}
-                            >
-                              Готовить
-                            </Button>
-                          )}
-                          {item.status === 'cooking' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleMarkItemReady(order.id, item.id)}
-                              className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
-                            >
-                              Готово
-                            </Button>
-                          )}
-                          {item.status === 'ready' && (
-                            <span className="text-sm text-green-600 dark:text-green-400">✓ Готово</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+    <RoleGuard requiredRoles={[USER_ROLES.CHEF, USER_ROLES.COOK]}>
+      <div className="min-h-screen bg-background text-foreground">
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 mx-4 mt-4 rounded border border-red-200 dark:border-red-800">
+            {error}
+            <Button variant="outline" size="sm" onClick={fetchOrders} className="ml-2">
+              Повторить
+            </Button>
           </div>
         )}
+
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Нет заказов</h3>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOrders.map((order) => (
+                <Card key={order.id}>
+                  <CardHeader>
+                    <div className="flex justify-between">
+                      <CardTitle className="text-lg">
+                        {order.order_number || `Заказ #${order.id.slice(-6)}`}
+                      </CardTitle>
+                     
+                    </div>
+                    <div className="flex w-full">
+                    <Badge className={`${getStatusColor(order.status)} w-full flex`}>
+                      {getStatusIcon(order.status)}
+                      <span className="ml-1">{getStatusText(order.status)}</span>
+                    </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {order.orderItems?.map((item) => (
+                        <div key={item.id} className="flex justify-between p-3 border border-border rounded bg-card">
+                          <div>
+                            <h4 className="font-medium text-card-foreground">{item.menuItem?.name || 'Неизвестно'}</h4>
+                            <span className="text-sm text-muted-foreground">x{item.quantity}</span>
+                          </div>
+                          <div>
+                            {item.status === 'pending' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStartCookingItem(order.id, item.id)}
+                              >
+                                Готовить
+                              </Button>
+                            )}
+                            {item.status === 'cooking' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkItemReady(order.id, item.id)}
+                                className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
+                              >
+                                Готово
+                              </Button>
+                            )}
+                            {item.status === 'ready' && (
+                              <span className="text-sm text-green-600 dark:text-green-400">✓ Готово</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </RoleGuard>
   );
 }
