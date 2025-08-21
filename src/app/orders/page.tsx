@@ -22,12 +22,7 @@ import {
   CreditCard,
   DollarSign,
   Filter,
-<<<<<<< HEAD
   Calendar
-=======
-  Calendar,
-  TableIcon
->>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
 } from "lucide-react";
 import { useOrders } from "@/entities/orders/hooks/useOrders";
 import { Order, OrderItem, ORDER_STATUSES, PaymentRequest } from "@/shared/types/orders";
@@ -35,7 +30,7 @@ import { ToastContainer, ToastProps } from "@/shared/ui/toast";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
 
-// Модальное окно для обработки платежей
+// Модальное окно для обработки платежейn
 const PaymentModal = ({ order, isOpen, onClose, onPayment }: { 
   order: Order | null; 
   isOpen: boolean; 
@@ -271,43 +266,6 @@ export default function OrdersPage() {
         {
           id: '1',
           order_number: '1234',
-<<<<<<< HEAD
-          location_id: '1',
-          status: 'pending',
-          order_type: 'dine_in',
-          guest_count: 2,
-          subtotal: 1250.00,
-          tax_amount: 0,
-          discount_amount: 0,
-          total_amount: 1250.00,
-          created_at: new Date(),
-          updated_at: new Date(),
-          customer_name: 'Иван Иванов',
-          customer_phone: '+7 (999) 123-45-67',
-          table: {
-            id: '1',
-            number: '5'
-          },
-          notes: 'Без лука',
-          orderItems: [
-            {
-              id: '1',
-              order_id: '1',
-              menu_item_id: '1',
-              quantity: 1,
-              unit_price: 1250.00,
-              total_price: 1250.00,
-              status: 'pending',
-              created_at: new Date(),
-              updated_at: new Date(),
-              menuItem: {
-                id: '1',
-                name: 'Пицца Маргарита',
-                price: 1250.00
-              }
-            }
-          ]
-=======
           status: 'pending',
           total_amount: '1250.00',
           created_at: new Date().toISOString(),
@@ -317,7 +275,6 @@ export default function OrdersPage() {
           order_type: 'dine_in',
           guest_count: 2,
           notes: 'Без лука'
->>>>>>> da7ff35f5700d0df922fac379a4fcb07c697e2ba
         }
       ];
       setOrders(mockOrders);

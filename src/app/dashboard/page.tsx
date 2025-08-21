@@ -9,8 +9,7 @@ import {
   BarChart3, 
   Users, 
   TrendingUp,
-  Clock
-} from "lucide-react";
+  Clock} from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
 
@@ -146,14 +145,14 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Товар "Пицца Маргарита" добавлен</div>
+                    <div className="text-sm font-medium text-gray-900">Товар &quot;Пицца Маргарита&quot; добавлен</div>
                     <div className="text-xs text-gray-500">15 минут назад</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Пользователь "admin" вошел в систему</div>
+                    <div className="text-sm font-medium text-gray-900">Пользователь &quot;admin&quot; вошел в систему</div>
                     <div className="text-xs text-gray-500">1 час назад</div>
                   </div>
                 </div>
