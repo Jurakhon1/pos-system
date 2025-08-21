@@ -4,13 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { 
   BarChart3, 
-  TrendingUp as TrendingUpIcon, 
-  TrendingDown as TrendingDownIcon, 
   DollarSign,
   Users,
   Package,
   Calendar,
-  Download,
   Filter
 } from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
@@ -21,7 +18,7 @@ export default function ReportsPage() {
     {
       title: "Отчет по продажам",
       description: "Анализ продаж по периодам, категориям и продуктам",
-      icon: TrendingUpIcon,
+      icon: Filter,
       color: "text-green-600",
       href: "/reports/sales"
     },
@@ -54,7 +51,7 @@ export default function ReportsPage() {
       value: "₽ 45,230",
       change: "+12.5%",
       trend: "up",
-      icon: TrendingUpIcon,
+      icon: Package,
       color: "text-green-600"
     },
     {
@@ -127,7 +124,7 @@ export default function ReportsPage() {
               Фильтры
             </Button>
             <Button>
-              <Download className="w-4 h-4 mr-2" />
+              <Filter className="w-4 h-4 mr-2" />
               Экспорт
             </Button>
           </div>
@@ -150,7 +147,7 @@ export default function ReportsPage() {
                   <p className={`text-xs flex items-center gap-1 ${
                     stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {stat.trend === 'up' ? <TrendingUpIcon className="w-3 h-3" /> : <TrendingDownIcon className="w-3 h-3" />}
+                    {stat.trend === 'up' ? <Package className="w-3 h-3" /> : <Package className="w-3 h-3" />}
                     {stat.change}
                   </p>
                 </CardContent>
@@ -216,7 +213,7 @@ export default function ReportsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-purple-600" />
+              <Filter className="h-5 w-5 text-purple-600" />
               Недавние отчеты
             </CardTitle>
           </CardHeader>
@@ -236,7 +233,7 @@ export default function ReportsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500 dark:text-gray-400">{report.size}</span>
                     <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4" />
+                      <Filter className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
