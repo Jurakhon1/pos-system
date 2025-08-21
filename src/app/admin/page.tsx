@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { 
   Users, 
   Settings, 
-  Server, 
+  Database, 
   Shield, 
   BarChart3,
   FileText,
@@ -49,7 +49,7 @@ export default function AdminPage() {
     {
       title: "База данных",
       description: "Управление базой данных и резервными копиями",
-      icon: Server,
+      icon: Database,
       href: "/admin/database",
       color: "text-red-600"
     },
@@ -213,7 +213,7 @@ export default function AdminPage() {
                 <span>Добавить блюдо</span>
               </Button>
               <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2">
-                <Server className="w-6 h-6" />
+                <Database className="w-6 h-6" />
                 <span>Резервная копия</span>
               </Button>
             </div>
