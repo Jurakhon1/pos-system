@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, X } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface AnimatedNotificationProps {
   type: 'success' | 'error';
@@ -60,7 +60,6 @@ export const AnimatedNotificationComponent = ({
               onClick={onClose}
               className="ml-2 p-1 rounded-full hover:bg-white/20 transition-colors"
             >
-              <X className="w-4 h-4" />
             </motion.button>
           </motion.div>
           
