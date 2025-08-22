@@ -73,7 +73,7 @@ export const OrdersApi = {
     return response.data;
   },
   updateOrderStatus: async (orderId: string, status: string) => {
-    const response = await api.patch(`/orders/${orderId}/status`, { status });
+    const response = await api.patch(`/orders/${orderId}`, { status });
     return response.data;
   },
   updateOrder: async (orderId: string, orderData: Partial<CreateOrder>) => {

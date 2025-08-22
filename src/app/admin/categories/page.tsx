@@ -272,13 +272,6 @@ export default function CategoriesPage() {
     setDeleteModal({ isOpen: false, category: null });
   };
 
-  // Функция для обновления страницы
-  const handleRetry = () => {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  };
-
   // Обработка ошибок
   if (error) {
     return (
@@ -291,7 +284,7 @@ export default function CategoriesPage() {
           <p className="text-gray-500 mb-4">
             {error.message || "Произошла ошибка при загрузке данных"}
           </p>
-          <Button onClick={handleRetry}>
+          <Button onClick={() => window.location.reload()}>
             Попробовать снова
           </Button>
         </div>

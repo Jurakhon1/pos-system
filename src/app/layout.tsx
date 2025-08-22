@@ -1,9 +1,6 @@
 
-import POSSidebar from "@/widgets/sidebar/POSSidebar";
 import "./globals.css";
 import QueryProvider from "@/shared/providers/QueryProvider";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/shared/ui/sidebar";
-import Toolbar from "@/widgets/toolbar/toolbar";
 import { ThemeProvider } from "@/shared/providers/theme-provider";
 import LayoutContent from "./LayoutContent";
 

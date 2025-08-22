@@ -41,55 +41,55 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Оптимизация веб-пака
-  webpack: (config, { dev, isServer }) => {
-    // Оптимизация для продакшена
-    if (!dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              priority: 10,
-              chunks: 'all',
-            },
-            radix: {
-              test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-              name: 'radix-ui',
-              priority: 20,
-              chunks: 'all',
-            },
-            framer: {
-              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-              name: 'framer-motion',
-              priority: 20,
-              chunks: 'all',
-            },
-            lucide: {
-              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
-              name: 'lucide',
-              priority: 20,
-              chunks: 'all',
-            },
-          },
-        },
-      };
-    }
+  // Отключаем webpack конфигурацию для совместимости с Turbopack
+  // webpack: (config, { dev, isServer }) => {
+  //   // Оптимизация для продакшена
+  //   if (!dev && !isServer) {
+  //     config.optimization = {
+  //       ...config.optimization,
+  //       splitChunks: {
+  //         chunks: 'all',
+  //         cacheGroups: {
+  //           vendor: {
+  //             test: /[\\/]node_modules[\\/]/,
+  //             name: 'vendors',
+  //             priority: 10,
+  //             chunks: 'all',
+  //           },
+  //           radix: {
+  //             test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+  //             name: 'radix-ui',
+  //             priority: 20,
+  //             chunks: 'all',
+  //           },
+  //           framer: {
+  //             test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+  //             name: 'framer-motion',
+  //             priority: 20,
+  //             chunks: 'all',
+  //           },
+  //           lucide: {
+  //             test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+  //             name: 'lucide',
+  //             priority: 20,
+  //             chunks: 'all',
+  //           },
+  //         },
+  //       },
+  //     };
+  //   }
 
-    // Оптимизация для сервера
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push({
-        'framer-motion': 'framer-motion',
-        'sonner': 'sonner',
-      });
-    }
+  //   // Оптимизация для сервера
+  //   if (isServer) {
+  //     config.externals = config.externals || [];
+  //     config.externals.push({
+  //       'framer-motion': 'framer-motion',
+  //       'sonner': 'sonner',
+  //     });
+  //   }
 
-    return config;
-  },
+  //   return config;
+  // },
 
   // Оптимизация заголовков
   async headers() {

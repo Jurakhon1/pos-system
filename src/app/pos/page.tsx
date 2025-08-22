@@ -63,9 +63,6 @@ export default function POSPage() {
   const { menuItems } = useMenuItems();
   const { categories } = useCategories();
 
-  useEffect(() => {
-    fetchTables();
-  }, [fetchTables]);
 
   const handleCreateOrder = async () => {
     const formData = {

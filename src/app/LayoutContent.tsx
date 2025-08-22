@@ -71,9 +71,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       <SidebarProvider defaultOpen={true}>
         <div className="flex h-screen w-full">
           <POSSidebar />
+
           <SidebarInset className="flex-1 overflow-auto bg-background min-w-0">
-            <div className="flex items-center gap-2 p-5 shadow-md shadow-border border-b border-border">
               <SidebarTrigger className="h-8 w-8" />
+            <div className="flex items-center gap-2 p-5 shadow-md shadow-border border-b border-border">
               <Toolbar />
             </div>
             <main className="flex-1">
