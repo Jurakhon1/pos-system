@@ -21,6 +21,7 @@ import {
 import { useKitchen } from "@/entities/kitchen";
 import { OrdersApi } from "@/entities/orders/api/ordersApi";
 import { Order, OrderItem } from "@/shared/types/orders";
+import { useAuth } from "@/entities/auth/hooks/useAuth";
 
 // Simple Badge component
 const Badge = ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -40,20 +41,40 @@ export default function KitchenPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   
-  // Default location ID - в реальном приложении это должно приходить из контекста пользователя
-  const defaultLocationId = '2'; // Можно вынести в конфиг или получать из auth context
+  // Получаем locationId из авторизации пользователя
+  const { getCurrentLocationId } = useAuth();
+  const [currentLocationId, setCurrentLocationId] = useState<string | null>(null);
+
+  // Получаем locationId при инициализации
+  useEffect(() => {
+    const locationId = getCurrentLocationId();
+    if (locationId) {
+      setCurrentLocationId(locationId);
+      console.log('📍 Кухня: получен locationId:', locationId);
+    } else {
+      console.error('❌ Кухня: locationId не найден');
+      setError('Не удалось определить локацию пользователя');
+    }
+  }, [getCurrentLocationId]);
 
   // Fetch orders from backend using new API methods
   const fetchOrders = async () => {
+    if (!currentLocationId) {
+      console.log('⏳ Кухня: ожидаем locationId...');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
+      console.log('📡 Кухня: загружаем заказы для локации:', currentLocationId);
+      
       // Получаем заказы по статусам для кухни
       const [pendingOrders, cookingOrders, readyOrders] = await Promise.all([
-        OrdersApi.getPendingOrders(defaultLocationId),
-        OrdersApi.getCookingOrders(defaultLocationId),
-        OrdersApi.getReadyOrders(defaultLocationId)
+        OrdersApi.getPendingOrders(currentLocationId),
+        OrdersApi.getCookingOrders(currentLocationId),
+        OrdersApi.getReadyOrders(currentLocationId)
       ]);
       
       // Объединяем все заказы, которые нужны кухне
@@ -62,6 +83,8 @@ export default function KitchenPage() {
         ...cookingOrders,
         ...readyOrders
       ];
+      
+      console.log('📦 Кухня: получено заказов:', allKitchenOrders.length);
       
       setOrders(allKitchenOrders);
       setFilteredOrders(allKitchenOrders);
@@ -77,18 +100,22 @@ export default function KitchenPage() {
     }
   };
 
-  // Initial load
+  // Initial load - загружаем заказы когда получим locationId
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (currentLocationId) {
+      fetchOrders();
+    }
+  }, [currentLocationId]);
 
   useEffect(() => {
+    if (!currentLocationId) return;
+    
     const interval = setInterval(() => {
       fetchOrders();
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentLocationId]);
 
   // Filter orders based on status and search
   useEffect(() => {
@@ -253,12 +280,31 @@ export default function KitchenPage() {
     return `${hours} ч ${diffInMinutes % 60} мин назад`;
   };
 
+  if (!currentLocationId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-600" />
+          <p className="text-gray-600 mb-2">Не удалось определить локацию</p>
+          <p className="text-sm text-gray-500">Проверьте авторизацию и попробуйте снова</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+            variant="outline"
+          >
+            Обновить страницу
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Загрузка кухни...</p>
+          <p className="text-gray-600">Загрузка кухни для локации {currentLocationId}...</p>
         </div>
       </div>
     );
@@ -268,8 +314,29 @@ export default function KitchenPage() {
     <div className="min-h-screen bg-blue-">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-         
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Кухня</h1>
+              <p className="text-sm text-gray-600">
+                Локация: {currentLocationId} • Заказов: {orders.length}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                variant="outline"
+                size="sm"
+              >
+                <Loader2 className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Обновить
+              </Button>
+              <div className="text-sm text-gray-500">
+                Последнее обновление: {lastUpdated ? formatTime(lastUpdated) : 'Нет'}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -302,6 +369,58 @@ export default function KitchenPage() {
       )}
 
      
+
+      {/* Filters and Search */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Поиск по номеру заказа, клиенту или блюду..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="pending">Ожидает</option>
+                  <option value="confirmed">Подтвержден</option>
+                  <option value="cooking">Готовится</option>
+                  <option value="ready">Готово</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                Сетка
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                Список
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
