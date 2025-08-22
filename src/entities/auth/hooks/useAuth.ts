@@ -59,9 +59,7 @@ export const useAuth = () => {
 
   const getCurrentLocationId = useCallback(() => {
     if (!isClient) return null;
-    const locationId = localStorageUtils.getItem("locationId");
-    console.log('🔍 getCurrentLocationId called, result:', locationId);
-    return locationId;
+    return localStorageUtils.getItem("locationId");
   }, [isClient]);
 
   const getCurrentUserRole = useCallback((): UserRole | null => {
@@ -96,8 +94,6 @@ export const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      console.log('✅ Login successful:', data);
-      
       // Сохраняем токен в localStorage (только на клиенте)
       if (isClient) {
         localStorageUtils.setItem("token", data.accessToken);
@@ -110,7 +106,6 @@ export const useAuth = () => {
         // Сохраняем ID пользователя и location_id из JWT токена
         try {
           const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-          console.log('JWT payload:', payload);
           
           if (payload.sub) {
             localStorageUtils.setItem("userId", payload.sub.toString());
@@ -141,18 +136,9 @@ export const useAuth = () => {
       
       // Перенаправляем на страницу по умолчанию для роли
       const defaultPage = getDefaultPageForRole();
-      console.log('Redirecting to:', defaultPage);
       router.push(defaultPage);
     },
     onError: (error: ApiError) => {
-      console.error("❌ Login failed:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config
-      });
-      
       // Уведомление пользователю об ошибке
       if (isClient && typeof window !== 'undefined') {
         alert(`Ошибка входа: ${error.response?.data?.message || error.message || 'Неизвестная ошибка'}`);
@@ -168,7 +154,6 @@ export const useAuth = () => {
       router.push("/login");
     },
     onError: (error: ApiError) => {
-      console.error("Registration failed:", error);
       if (isClient && typeof window !== 'undefined') {
         alert(`Ошибка регистрации: ${error.response?.data?.message || error.message || 'Неизвестная ошибка'}`);
       }
@@ -176,8 +161,6 @@ export const useAuth = () => {
   });
 
   const logout = useCallback(() => {
-    console.log('Logging out...');
-    
     if (isClient) {
       // Удаляем токен из localStorage
       localStorageUtils.removeItem("token");
@@ -207,7 +190,6 @@ export const useAuth = () => {
   const authValues = useMemo(() => ({
     login: (username: string, password: string) => {
       if (!isClient) return;
-      console.log('🔐 Attempting login for:', username);
       loginMutation.mutate({ username, password });
     },
     register: registerMutation.mutate,

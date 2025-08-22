@@ -1,23 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useCart } from "@/entities/cart";
+import { useOrderCreation, OrderFormData } from "@/features/order-creation/hooks/useOrderCreation";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { 
-  ShoppingCart, 
-
+  Users, 
+  Phone, 
+  ClipboardList, 
+  ShoppingCart,
+  Plus,
+  Minus,
+  Trash2,
+  Table as TableIcon,
+  User,
+  Calendar,
+  FileText,
+  CreditCard,
   Search,
   Filter,
+  
   Clock,
   CheckCircle,
-  Minus,
-  Plus,
-  Trash2,
-  CreditCard,
-  ClipboardList,
-  FileText,
-  Table as TableIcon,
-  User
 } from "lucide-react";
 import Image from "next/image";
 import { CartItem } from "@/entities/cart";
@@ -27,8 +32,6 @@ import { useTables } from "@/entities/tables/hooks/useTables";
 import { Table as TableType } from "@/entities/tables/api/tableApi";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
-import { useCart } from "@/entities/cart/hooks/useCart";
-import { useOrderCreation } from "@/features/order-creation/hooks/useOrderCreation";
 
 interface Category {
   id: string;
@@ -45,53 +48,53 @@ interface MenuItem {
 }
 
 export default function POSPage() {
+  const { menuItems } = useMenuItems();
+  const { categories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [tableNumber, setTableNumber] = useState<number | null>(null);
+  const [tableId, setTableId] = useState<string | null>(null);
   const [guestCount, setGuestCount] = useState(1);
-  const [tableId, setTableId] = useState<string>("");
-  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
   const [searchQuery, setSearchQuery] = useState("");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
-
   const { tables, isLoading, error, fetchTables, updateTableStatus } = useTables();
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
-  const { menuItems } = useMenuItems();
-  const { categories } = useCategories();
-
 
   const handleCreateOrder = async () => {
-    const formData = {
-      customerName,
-      customerPhone,
+    const formData: OrderFormData = {
+      customerName: customerName || "Гость",
+      customerPhone: customerPhone || "",
       guestCount,
       notes,
       orderType
     };
 
-    try {
-      await createOrder(cartItems, tableId || null, formData);
-      clearCart();
-      setCustomerName("");
-      setTableId("");
-      
-      setCustomerPhone("");
-      setGuestCount(1);
-      setTableId("");
-      setTableNumber(null);
-      setNotes("");
-      setOrderType('dine_in');
-      setShowOrderForm(false);
-      setShowCustomerForm(false);
-      alert("Заказ успешно создан!");
-    } catch (error) {
-      console.error("Ошибка создания заказа:", error);
-      alert("Ошибка создания заказа");
-    }
+    createOrder(
+      cartItems,
+      tableId,
+      formData,
+      (data) => {
+        clearCart();
+        setCustomerName("");
+        setCustomerPhone("");
+        setTableNumber(null);
+        setTableId(null);
+        setGuestCount(1);
+        setNotes("");
+        setOrderType('dine_in');
+        setShowOrderForm(false);
+        setShowCustomerForm(false);
+        alert("Заказ успешно создан!");
+      },
+      (error) => {
+        alert(`Ошибка создания заказа: ${error.message}`);
+      }
+    );
   };
 
   const totalAmount = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0);
@@ -405,7 +408,6 @@ export default function POSPage() {
                       >
                         <User className="w-4 h-4 mr-2" />
                         Детали заказа
-                        {/* ArrowRight icon was removed from imports, so it's removed here */}
                       </Button>
                     </div>
                   </div>
@@ -426,7 +428,6 @@ export default function POSPage() {
                     onClick={() => setShowCustomerForm(false)}
                     className="h-8 w-8 p-0"
                   >
-                    {/* X icon was removed from imports, so it's removed here */}
                   </Button>
                 </div>
 
@@ -469,10 +470,9 @@ export default function POSPage() {
                       <select
                         value={tableId || ""}
                         onChange={(e) => {
-                          const value = e.target.value || "";
-                          setTableId(value);
-                          const selectedTable = tables?.find((table) => table.id === value);
-                          setTableNumber(selectedTable ? selectedTable.number.toString() : null);
+                          setTableId(e.target.value);
+                          const selectedTable = tables?.find((table) => table.id === e.target.value);
+                          setTableNumber(selectedTable ? selectedTable.number : null);
                         }}
                         className="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >

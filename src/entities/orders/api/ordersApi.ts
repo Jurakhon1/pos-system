@@ -37,32 +37,36 @@ export const OrdersApi = {
     return response.data;
   },
   createOrderFromCart: async (orderData: CreateOrderFromCart) => {
-    // Сначала создаем заказ
-    const orderResponse = await api.post(`/orders`, {
-      locationId: orderData.locationId,
-      tableId: orderData.tableId,
-      orderType: orderData.orderType,
-      waiterId: orderData.waiterId,
-      customerName: orderData.customerName,
-      customerPhone: orderData.customerPhone,
-      guestCount: orderData.guestCount || 1,
-      notes: orderData.notes
-    });
-    
-    const order = orderResponse.data;
-    
-    // Затем добавляем позиции заказа
-    if (orderData.items && orderData.items.length > 0) {
-      for (const item of orderData.items) {
-        await api.post(`/orders/${order.id}/items`, {
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          specialInstructions: item.specialInstructions
-        });
+    try {
+      // Сначала создаем заказ
+      const orderResponse = await api.post(`/orders`, {
+        locationId: orderData.locationId,
+        tableId: orderData.tableId,
+        orderType: orderData.orderType,
+        waiterId: orderData.waiterId,
+        customerName: orderData.customerName,
+        customerPhone: orderData.customerPhone,
+        guestCount: orderData.guestCount || 1,
+        notes: orderData.notes
+      });
+      
+      const order = orderResponse.data;
+      
+      // Затем добавляем позиции заказа
+      if (orderData.items && orderData.items.length > 0) {
+        for (const item of orderData.items) {
+          await api.post(`/orders/${order.id}/items`, {
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            specialInstructions: item.specialInstructions
+          });
+        }
       }
+      
+      return order;
+    } catch (error: any) {
+      throw error;
     }
-    
-    return order;
   },
   processPayment: async (orderId: string, paymentData: PaymentRequest): Promise<PaymentResponse> => {
     const response = await api.post(`/orders/${orderId}/payment`, paymentData);

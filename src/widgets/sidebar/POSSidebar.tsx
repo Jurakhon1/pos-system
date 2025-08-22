@@ -3,7 +3,11 @@
 import * as React from "react"
 import { 
   Settings, 
-  Shield
+  Shield,
+  CreditCard,
+  ClipboardList,
+  BarChart3,
+  Users
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
@@ -36,36 +40,43 @@ export default function POSSidebar({ className }: POSSidebarProps) {
     {
       href: "/dashboard",
       label: "Главная",
+      icon: Shield,
       roles: [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/pos",
       label: "POS",
+      icon: CreditCard,
       roles: [USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/orders",
       label: "Заказы",
+      icon: ClipboardList,
       roles: [USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/kitchen",
       label: "Кухня",
+      icon: Shield,
       roles: [USER_ROLES.CHEF, USER_ROLES.COOK, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/reports",
       label: "Отчёты",
+      icon: BarChart3,
       roles: [USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/settings",
       label: "Настройки",
+      icon: Settings,
       roles: [USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]
     },
     {
       href: "/admin",
       label: "Админ панель",
+      icon: Users,
       roles: [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN]
     }
   ]
@@ -128,6 +139,7 @@ export default function POSSidebar({ className }: POSSidebarProps) {
                             "flex items-center gap-3 w-full",
                             isOpen ? "px-3" : "justify-center px-0"
                           )}>
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
                             {isOpen && (
                               <span className="font-medium text-sm truncate">
                                 {item.label}

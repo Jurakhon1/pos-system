@@ -99,3 +99,4 @@ const router = useRouter();
 router.push('/path'); // вместо window.location.href
 ```
 
+

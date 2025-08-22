@@ -12,11 +12,22 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   // Проверяем, что мы на клиенте перед обращением к localStorage
   const token = localStorageUtils.getItem("token");
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// Добавляем response interceptor для логирования ответов
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export { api };
 export default api;

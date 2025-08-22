@@ -2,6 +2,8 @@
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Suspense, lazy } from "react";
+import { Settings } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 
 // Динамические импорты для тяжелых компонентов
 const POSSidebar = dynamic(() => import("@/widgets/sidebar/POSSidebar"), {
@@ -73,8 +75,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <POSSidebar />
 
           <SidebarInset className="flex-1 overflow-auto bg-background min-w-0">
-              <SidebarTrigger className="h-8 w-8" />
             <div className="flex items-center gap-2 p-5 shadow-md shadow-border border-b border-border">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SidebarTrigger className="h-8 w-8 p-1 hover:bg-muted hover:text-primary rounded-md transition-colors duration-200 border border-border">
+                      <Settings className="h-4 w-4" />
+                    </SidebarTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Переключить сайдбар</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Toolbar />
             </div>
             <main className="flex-1">
