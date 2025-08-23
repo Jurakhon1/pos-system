@@ -85,7 +85,6 @@ export const useOrderCreation = () => {
         locationId: locationId, // Используем locationId из авторизации
         tableId: tableId || undefined,
         orderType: formData.orderType,
-        waiterId: userId,
         customerName: formData.customerName.trim(),
         customerPhone: formData.customerPhone.trim(),
         guestCount: formData.guestCount,
