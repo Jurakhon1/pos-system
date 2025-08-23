@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { 
   Clock, 
   CheckCircle, 
@@ -13,149 +14,161 @@ import {
   Filter,
   Users,
   Phone,
-  Plus,
-  Minus,
-  Edit,
+  User,
   Eye
 } from "lucide-react";
-import { useKitchen } from "@/entities/kitchen";
-import { OrdersApi } from "@/entities/orders/api/ordersApi";
+import { useOrders } from "@/entities/orders/hooks/useOrders";
 import { Order, OrderItem } from "@/shared/types/orders";
-import { useAuth } from "@/entities/auth/hooks/useAuth";
-
-// Simple Badge component
-const Badge = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}>
-    {children}
-  </span>
-);
+import { useTheme } from "next-themes";
+import { PageLayout } from "@/shared/components/PageLayout";
 
 export default function KitchenPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { theme } = useTheme();
+
+  // Dynamic theme classes
+  const isDark = theme === 'dark';
+  const bgCard = isDark ? 'bg-gray-900/50' : 'bg-white';
+  const bgCardHover = isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50';
+  const borderMain = isDark ? 'border-gray-800' : 'border-gray-200';
+  const borderHover = isDark ? 'hover:border-gray-700' : 'hover:border-gray-300';
+  const textMain = isDark ? 'text-gray-100' : 'text-gray-900';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+  const textMuted = isDark ? 'text-gray-500' : 'text-gray-500';
+
+  // Use the useOrders hook for kitchen-specific queries
+  const { 
+    usePendingOrders, 
+    useCookingOrders, 
+    useReadyOrders,
+    orders: generalOrders,
+    isLoading: generalLoading,
+    startCookingOrderItem,
+    markOrderItemReady,
+    cancelOrder,
+    isStartingCooking,
+    isMarkingReady,
+    isCancelling
+  } = useOrders();
+
+  const { data: pendingOrders = [], isLoading: pendingLoading } = usePendingOrders('');
+  const { data: cookingOrders = [], isLoading: cookingLoading } = useReadyOrders('');
+  const { data: readyOrders = [], isLoading: readyLoading } = useReadyOrders('');
+
+  // Combine all orders for kitchen - try both approaches
+  const allOrders = [...pendingOrders, ...cookingOrders, ...readyOrders];
   
-  // Получаем locationId из авторизации пользователя
-  const { getCurrentLocationId } = useAuth();
-  const [currentLocationId, setCurrentLocationId] = useState<string | null>(null);
-
-  // Получаем locationId при инициализации
-  useEffect(() => {
-    const locationId = getCurrentLocationId();
-    if (locationId) {
-      setCurrentLocationId(locationId);
-      console.log('📍 Кухня: получен locationId:', locationId);
-    } else {
-      console.error('❌ Кухня: locationId не найден');
-      setError('Не удалось определить локацию пользователя');
+  // If location-specific queries return empty, try using general orders
+  const fallbackOrders = generalOrders || [];
+  
+  // Use fallback orders if location-specific ones are empty
+  const effectiveOrders: Order[] = allOrders.length > 0 ? allOrders : fallbackOrders;
+  
+  console.log('🔍 Kitchen Debug Info:', {
+    pendingOrders: pendingOrders.length,
+    cookingOrders: cookingOrders.length,
+    readyOrders: readyOrders.length,
+    allOrders: allOrders.length,
+    generalOrders: fallbackOrders.length,
+    effectiveOrders: effectiveOrders.length,
+    pendingLoading,
+    cookingLoading,
+    readyLoading,
+    generalLoading
+  });
+  
+  // Filter orders based on search and status
+  const filteredOrders = effectiveOrders.filter(order => {
+    // Only show orders that have items (kitchen needs items to cook)
+    if (!order.orderItems || order.orderItems.length === 0) {
+      console.log('❌ Order filtered out (no items):', order.order_number, order.orderItems?.length);
+      return false;
     }
-  }, [getCurrentLocationId]);
-
-  // Fetch orders from backend using new API methods
-  const fetchOrders = async () => {
-    if (!currentLocationId) {
-      console.log('⏳ Кухня: ожидаем locationId...');
-      return;
+    
+    // For fallback orders, only show kitchen-relevant statuses
+    const isKitchenRelevant = ['pending', 'cooking', 'ready'].includes(order.status);
+    if (!isKitchenRelevant) {
+      console.log('❌ Order filtered out (not kitchen relevant):', order.order_number, order.status);
+      return false;
     }
+    
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    const matchesSearch = !searchQuery || 
+      order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.orderItems?.some((item: OrderItem) => 
+        item.menuItem?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    
+    if (matchesStatus && matchesSearch) {
+      console.log('✅ Order included:', order.order_number, order.status, order.orderItems.length);
+    }
+    
+    return matchesStatus && matchesSearch;
+  });
 
+  // Get counts for different order types
+  const pendingCount = effectiveOrders.filter(order => 
+    order.status === 'pending' && order.orderItems && order.orderItems.length > 0
+  ).length;
+  
+  const cookingCount = effectiveOrders.filter(order => 
+    order.status === 'cooking' && order.orderItems && order.orderItems.length > 0
+  ).length;
+  
+  const readyCount = effectiveOrders.filter(order => 
+    order.status === 'ready' && order.orderItems && order.orderItems.length > 0
+  ).length;
+
+  const isLoading = pendingLoading || cookingLoading || readyLoading;
+
+  const handleStartCooking = async (orderId: string, itemId: string) => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('📡 Кухня: загружаем заказы для локации:', currentLocationId);
-      
-      // Получаем заказы по статусам для кухни
-      const [pendingOrders, cookingOrders, readyOrders] = await Promise.all([
-        OrdersApi.getPendingOrders(currentLocationId),
-        OrdersApi.getCookingOrders(currentLocationId),
-        OrdersApi.getReadyOrders(currentLocationId)
-      ]);
-      
-      // Объединяем все заказы, которые нужны кухне
-      const allKitchenOrders = [
-        ...pendingOrders,
-        ...cookingOrders,
-        ...readyOrders
-      ];
-      
-      console.log('📦 Кухня: получено заказов:', allKitchenOrders.length);
-      
-      setOrders(allKitchenOrders);
-      setFilteredOrders(allKitchenOrders);
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-      setError('Ошибка загрузки заказов');
-      // Fallback to empty array if API fails
-      setOrders([]);
-      setFilteredOrders([]);
-    } finally {
-      setLoading(false);
+      await startCookingOrderItem({ orderId, itemId });
+    } catch (error) {
+      console.error('Error starting cooking:', error);
     }
   };
 
-  // Initial load - загружаем заказы когда получим locationId
-  useEffect(() => {
-    if (currentLocationId) {
-      fetchOrders();
+  const handleMarkReady = async (orderId: string, itemId: string) => {
+    try {
+      await markOrderItemReady({ orderId, itemId });
+    } catch (error) {
+      console.error('Error marking ready:', error);
     }
-  }, [currentLocationId]);
+  };
 
-  useEffect(() => {
-    if (!currentLocationId) return;
-    
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [currentLocationId]);
-
-  // Filter orders based on status and search
-  useEffect(() => {
-    let filtered = orders;
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
+  const handleCancel = async (orderId: string) => {
+    try {
+      await cancelOrder(orderId);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
     }
+  };
 
-    if (searchQuery) {
-      filtered = filtered.filter(order => 
-        order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.orderItems?.some(item => 
-          item.menuItem?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    }
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // The useOrders hook will automatically refetch
+    setTimeout(() => setRefreshing(false), 1000);
+  };
 
-    setFilteredOrders(filtered);
-  }, [orders, statusFilter, searchQuery]);
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       case 'cooking':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       case 'ready':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'served':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'paid':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -163,18 +176,10 @@ export default function KitchenPage() {
     switch (status) {
       case 'pending':
         return 'Ожидает';
-      case 'confirmed':
-        return 'Подтвержден';
       case 'cooking':
         return 'Готовится';
       case 'ready':
         return 'Готово';
-      case 'served':
-        return 'Подано';
-      case 'paid':
-        return 'Оплачено';
-      case 'cancelled':
-        return 'Отменен';
       default:
         return status;
     }
@@ -184,81 +189,13 @@ export default function KitchenPage() {
     switch (status) {
       case 'pending':
         return <Clock className="w-4 h-4" />;
-      case 'confirmed':
-        return <Clock className="w-4 h-4" />;
       case 'cooking':
-        return <Loader2 className="w-4 h-4 animate-spin" />;
+        return <User className="w-4 h-4" />;
       case 'ready':
         return <CheckCircle className="w-4 h-4" />;
-      case 'served':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'paid':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled':
-        return <AlertTriangle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
-  };
-
-  // Handle individual order item actions
-  const handleStartCookingItem = async (orderId: string, itemId: string) => {
-    try {
-      // Start cooking specific item via API endpoint: PUT /orders/{id}/items/{itemId}/start-cooking
-      // Backend requires cook_id, API will use default cook ID
-      await OrdersApi.startCookingOrderItem(orderId, itemId);
-      // Refresh orders to get updated status
-      await fetchOrders();
-      console.log(`Started cooking item ${itemId} from order ${orderId}`);
-    } catch (err) {
-      console.error('Error starting cooking item:', err);
-      setError('Ошибка начала приготовления блюда');
-    }
-  };
-
-  const handleMarkItemReady = async (orderId: string, itemId: string) => {
-    try {
-      // Mark specific item as ready via API endpoint: PUT /orders/{id}/items/{itemId}/ready
-      await OrdersApi.markOrderItemReady(orderId, itemId);
-      // Refresh orders to get updated status
-      await fetchOrders();
-      console.log(`Marked item ${itemId} as ready from order ${orderId}`);
-    } catch (err) {
-      console.error('Error marking item as ready:', err);
-      setError('Ошибка отметки блюда как готового');
-    }
-  };
-
-  const handleCancelOrder = async (orderId: string) => {
-    try {
-      // Cancel order via API endpoint: PUT /orders/{id}/cancel
-      await OrdersApi.cancelOrder(orderId);
-      // Refresh orders to get updated status
-      await fetchOrders();
-      console.log(`Order ${orderId} cancelled`);
-    } catch (err) {
-      console.error('Error cancelling order:', err);
-      setError('Ошибка отмены заказа');
-    }
-  };
-
-  const handleUpdateItemQuantity = async (orderId: string, itemId: string, newQuantity: number) => {
-    try {
-      // Update item quantity via API endpoint: PATCH /orders/{id}/items/{itemId}/quantity
-      await OrdersApi.updateOrderItemQuantity(orderId, itemId, newQuantity);
-      // Refresh orders to get updated data
-      await fetchOrders();
-      console.log(`Updated quantity for item ${itemId} to ${newQuantity}`);
-    } catch (err) {
-      console.error('Error updating item quantity:', err);
-      setError('Ошибка обновления количества');
-    }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchOrders();
-    setRefreshing(false);
   };
 
   const formatTime = (dateString: string | Date) => {
@@ -275,308 +212,268 @@ export default function KitchenPage() {
     const diffInMinutes = Math.floor((now.getTime() - orderTime.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'Только что';
-    if (diffInMinutes < 60) return `${diffInMinutes} мин назад`;
+    if (diffInMinutes < 60) return `${diffInMinutes} мин`;
     const hours = Math.floor(diffInMinutes / 60);
-    return `${hours} ч ${diffInMinutes % 60} мин назад`;
+    return `${hours}ч ${diffInMinutes % 60}м`;
   };
 
-  if (!currentLocationId) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <p className="text-gray-600 mb-2">Не удалось определить локацию</p>
-          <p className="text-sm text-gray-500">Проверьте авторизацию и попробуйте снова</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="mt-4"
-            variant="outline"
-          >
-            Обновить страницу
-          </Button>
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-6 text-blue-500" />
+          <h2 className="text-xl font-semibold text-gray-100 mb-2">Загрузка кухни</h2>
+          <p className="text-gray-400">Подготавливаем заказы...</p>
         </div>
       </div>
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Загрузка кухни для локации {currentLocationId}...</p>
-        </div>
+  // Stats for the header
+  const stats = [
+    {
+      title: "Ожидает",
+      value: pendingCount.toString(),
+      icon: Clock,
+      color: "text-amber-600"
+    },
+    {
+      title: "Готовится",
+      value: cookingCount.toString(),
+      icon: User,
+      color: "text-orange-600"
+    },
+    {
+      title: "Готово",
+      value: readyCount.toString(),
+      icon: CheckCircle,
+      color: "text-green-600"
+    },
+    {
+      title: "Всего заказов",
+      value: effectiveOrders.length.toString(),
+      icon: Package,
+      color: "text-blue-600"
+    }
+  ];
+
+  // Filters component
+  const filters = (
+    <div className="flex items-center gap-4">
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        className={`px-4 py-3 ${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} border ${borderMain} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 ${textMain}`}
+      >
+        <option value="all">Все статусы</option>
+        <option value="pending">Ожидает ({pendingCount})</option>
+        <option value="cooking">Готовится ({cookingCount})</option>
+        <option value="ready">Готово ({readyCount})</option>
+      </select>
+      
+      <div className="flex items-center gap-2">
+        <Button
+          variant={viewMode === 'grid' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('grid')}
+          className={viewMode === 'grid' ? 'bg-blue-600 hover:bg-blue-700' : `${borderMain} ${textSecondary} ${borderHover}`}
+        >
+          Сетка
+        </Button>
+        <Button
+          variant={viewMode === 'list' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('list')}
+          className={viewMode === 'list' ? 'bg-blue-600 hover:bg-blue-700' : `${borderMain} ${textSecondary} ${borderHover}`}
+        >
+          Список
+        </Button>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-blue-">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Кухня</h1>
-              <p className="text-sm text-gray-600">
-                Локация: {currentLocationId} • Заказов: {orders.length}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                variant="outline"
-                size="sm"
-              >
-                <Loader2 className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Обновить
-              </Button>
-              <div className="text-sm text-gray-500">
-                Последнее обновление: {lastUpdated ? formatTime(lastUpdated) : 'Нет'}
-              </div>
-            </div>
-          </div>
+    <PageLayout
+      title="Кухня"
+      subtitle={`${effectiveOrders.length} заказов`}
+      icon={<Package className="w-8 h-8" />}
+      stats={stats}
+      showSearch={true}
+      searchPlaceholder="Поиск по номеру заказа, клиенту или блюду..."
+      onSearch={handleSearch}
+      showFilters={true}
+      filters={filters}
+      showRefresh={true}
+      onRefresh={handleRefresh}
+      loading={refreshing}
+    >
+      {filteredOrders.length === 0 ? (
+        <div className="text-center py-16">
+          <Package className={`w-20 h-20 ${textMuted} mx-auto mb-6`} />
+          <h3 className={`text-xl font-medium ${textMain} mb-2`}>Нет заказов для кухни</h3>
+          <p className={textMuted}>
+            {effectiveOrders.length === 0 
+              ? 'Заказы не найдены' 
+              : 'Все заказы пустые или не содержат позиций для приготовления'
+            }
+          </p>
         </div>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mx-4 mt-4">
-          <div className="flex items-center justify-between">
-            <span className="block sm:inline">{error}</span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchOrders}
-                className="text-red-700 border-red-300 hover:bg-red-100"
-              >
-                <Loader2 className="w-4 h-4 mr-1" />
-                Повторить
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setError(null)}
-                className="text-red-700 hover:bg-red-100"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-     
-
-      {/* Filters and Search */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Поиск по номеру заказа, клиенту или блюду..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">Все статусы</option>
-                  <option value="pending">Ожидает</option>
-                  <option value="confirmed">Подтвержден</option>
-                  <option value="cooking">Готовится</option>
-                  <option value="ready">Готово</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                Сетка
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                Список
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Нет заказов</h3>
-            <p className="text-gray-500">По выбранным фильтрам заказы не найдены</p>
-          </div>
-        ) : (
-          <div className={viewMode === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
-            : 'space-y-4'
-          }>
-            {filteredOrders.map((order) => (
-              <Card key={order.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg font-bold text-gray-900">
-                        {order.order_number || `Заказ #${order.id.slice(-6)}`}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={getStatusColor(order.status)}>
-                          {getStatusIcon(order.status)}
-                          <span className="ml-1">{getStatusText(order.status)}</span>
-                        </Badge>
-                        <span className="text-sm text-gray-500">
-                          {getTimeAgo(order.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+      ) : (
+        <div className={viewMode === 'grid' 
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
+          : 'space-y-4'
+        }>
+          {filteredOrders.map((order) => (
+            <Card key={order.id} className={`${bgCard} border ${borderMain} overflow-hidden ${borderHover} transition-all duration-200 hover:shadow-2xl ${isDark ? 'hover:shadow-black/20' : 'hover:shadow-gray-200/50'}`}>
+              <CardHeader className={`pb-4 ${isDark ? 'bg-gradient-to-r from-gray-900/50 to-gray-800/30' : 'bg-gradient-to-r from-gray-50 to-gray-100'}`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className={`text-xl font-bold ${textMain} mb-2`}>
+                      {order.order_number || `Заказ #${order.id.slice(-6)}`}
+                    </CardTitle>
+                    <div className="flex items-center gap-3">
+                      <Badge className={`${getStatusColor(order.status)} border`}>
+                        {getStatusIcon(order.status)}
+                        <span className="ml-2">{getStatusText(order.status)}</span>
+                      </Badge>
+                      <span className={`text-sm ${textSecondary} flex items-center gap-1`}>
                         <Clock className="w-4 h-4" />
-                        {formatTime(order.created_at)}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        {order.order_type === 'dine_in' ? (
-                          <>
-                            <Users className="w-4 h-4" />
-                            Стол {order.table?.number || 'Не указан'}
-                          </>
-                        ) : (
-                          <>
-                            <Phone className="w-4 h-4" />
-                            На вынос
-                          </>
-                        )}
-                      </div>
-                      
-                      {/* Cancel order button */}
-                      {['pending', 'confirmed'].includes(order.status) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCancelOrder(order.id)}
-                          className="mt-2 text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1 h-6"
-                        >
-                          Отменить заказ
-                        </Button>
+                        {getTimeAgo(order.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className={`text-sm ${textSecondary} mb-1`}>
+                      {formatTime(order.created_at)}
+                    </div>
+                    <div className={`flex items-center gap-1 text-sm ${textSecondary}`}>
+                      {order.order_type === 'dine_in' ? (
+                        <>
+                          <Users className="w-4 h-4" />
+                          Стол {order.table?.number || '?'}
+                        </>
+                      ) : (
+                        <>
+                          <Phone className="w-4 h-4" />
+                          На вынос
+                        </>
                       )}
                     </div>
                   </div>
-                </CardHeader>
+                </div>
+              </CardHeader>
 
-                <CardContent className="pt-0">
-                  {/* Customer Info */}
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <span className="font-medium">Клиент:</span>
-                      <span>{order.customer_name || 'Не указан'}</span>
+              <CardContent className="pt-0">
+                {/* Customer Info */}
+                <div className={`mb-6 p-4 ${isDark ? 'bg-gray-800/30' : 'bg-gray-50'} rounded-xl border ${isDark ? 'border-gray-700/50' : 'border-gray-200'}`}>
+                  <div className={`flex items-center gap-2 text-sm ${textMain} mb-2`}>
+                    <span className="font-medium">Клиент:</span>
+                    <span>{order.customer_name || 'Не указан'}</span>
+                  </div>
+                  {order.customer_phone && (
+                    <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+                      <Phone className="w-4 h-4" />
+                      <span>{order.customer_phone}</span>
                     </div>
-                    {order.customer_phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-700 mt-1">
-                        <Phone className="w-4 h-4" />
-                        <span>{order.customer_phone}</span>
-                      </div>
-                    )}
-                    {order.table && (
-                      <div className="flex items-center gap-2 text-sm text-gray-700 mt-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{order.table.zone || 'Основной зал'} - Стол {order.table.number}</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  {order.table && (
+                    <div className={`flex items-center gap-2 text-sm ${textSecondary} mt-2`}>
+                      <Eye className="w-4 h-4" />
+                      <span>{order.table.zone || 'Основной зал'} - Стол {order.table.number}</span>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Order Items */}
-                  <div className="space-y-3 mb-4">
-                    {order.orderItems?.map((item) => (
-                      <div key={item.id} className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-medium text-gray-900">{item.menuItem?.name || 'Неизвестное блюдо'}</h4>
-                            <span className="text-sm font-medium text-gray-700">
-                              x{item.quantity}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{item.menuItem?.description || 'Описание отсутствует'}</p>
-                          {item.special_instructions && (
-                            <div className="flex items-start gap-2">
-                              <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm text-orange-700 bg-orange-50 px-2 py-1 rounded">
-                                {item.special_instructions}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Item-specific actions */}
-                          <div className="flex gap-2 mt-3">
-                            {item.status === 'pending' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStartCookingItem(order.id, item.id)}
-                                className="text-xs px-2 py-1 h-7"
-                              >
-                                <Plus className="w-3 h-3 mr-1" />
-                                Готовить
-                              </Button>
-                            )}
-                            {item.status === 'cooking' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMarkItemReady(order.id, item.id)}
-                                className="text-xs px-2 py-1 h-7 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                              >
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Готово
-                              </Button>
-                            )}
-                            {item.status === 'ready' && (
-                              <span className="text-sm text-green-600 font-medium">
-                                ✓ Готово
-                              </span>
-                            )}
-                          </div>
+                {/* Order Items */}
+                <div className="space-y-4 mb-6">
+                  {order.orderItems?.map((item: OrderItem) => (
+                    <div key={item.id} className={`p-4 ${isDark ? 'bg-gray-800/20' : 'bg-gray-50'} rounded-xl border ${isDark ? 'border-gray-700/50' : 'border-gray-200'}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className={`font-semibold ${textMain}`}>{item.menuItem?.name || 'Неизвестное блюдо'}</h4>
+                        <span className="text-lg font-bold text-blue-400">
+                          x{item.quantity}
+                        </span>
+                      </div>
+                      
+                      {item.menuItem?.description && (
+                        <p className={`text-sm ${textSecondary} mb-3`}>{item.menuItem.description}</p>
+                      )}
+                      
+                      {item.special_instructions && (
+                        <div className="flex items-start gap-2 mb-3">
+                          <AlertTriangle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-orange-300 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/20">
+                            {item.special_instructions}
+                          </span>
                         </div>
+                      )}
+                      
+                      {/* Item Actions */}
+                      <div className="flex gap-3">
+                        {item.status === 'pending' && (
+                          <Button
+                            onClick={() => handleStartCooking(order.id, item.id)}
+                            disabled={isStartingCooking}
+                            className="flex-1 bg-orange-600 hover:bg-orange-700 text-white border-0"
+                          >
+                            <User className="w-4 h-4 mr-2" />
+                            {isStartingCooking ? 'Запуск...' : 'Начать готовить'}
+                          </Button>
+                        )}
+                        
+                        {item.status === 'cooking' && (
+                          <Button
+                            onClick={() => handleMarkReady(order.id, item.id)}
+                            disabled={isMarkingReady}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white border-0"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {isMarkingReady ? 'Готово...' : 'Отметить готовым'}
+                          </Button>
+                        )}
+                        
+                        {item.status === 'ready' && (
+                          <div className="flex-1 flex items-center justify-center text-green-400 font-medium">
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Готово
+                          </div>
+                        )}
                       </div>
-                    )) || (
-                      <div className="text-center py-4 text-gray-500">
-                        Позиции заказа не загружены
-                      </div>
-                    )}
-                  </div>
+                      
+                      {/* Cooking Time Info */}
+                      {(item.menuItem as any)?.cooking_time && (
+                        <div className={`mt-2 text-xs ${textMuted} flex items-center gap-1`}>
+                          <Clock className="w-3 h-3" />
+                          Время приготовления: {(item.menuItem as any).cooking_time} мин
+                        </div>
+                      )}
+                    </div>
+                  )) || (
+                    <div className={`text-center py-6 ${textMuted}`}>
+                      Позиции заказа не загружены
+                    </div>
+                  )}
+                </div>
 
-                  {/* Action Buttons */}
-                  
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                {/* Order Actions */}
+                {['pending', 'confirmed'].includes(order.status) && (
+                  <div className={`pt-4 border-t ${isDark ? 'border-gray-700/50' : 'border-gray-200'}`}>
+                    <Button
+                      onClick={() => handleCancel(order.id)}
+                      disabled={isCancelling}
+                      variant="outline"
+                      className={`w-full ${isDark ? 'border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50' : 'border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400'}`}
+                    >
+                      {isCancelling ? 'Отмена...' : 'Отменить заказ'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </PageLayout>
   );
 }

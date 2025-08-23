@@ -1,5 +1,6 @@
 "use client"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { OrdersApi } from "../api/ordersApi";
 import { CreateOrder, CreateOrderFromCart, PaymentRequest } from "@/shared/types/orders";
 
@@ -128,6 +129,20 @@ export const useOrders = () => {
     },
   });
 
+  // Wrap mutation functions in useCallback to prevent infinite re-renders
+  const createOrder = useCallback(createOrderMutation.mutate, [createOrderMutation.mutate]);
+  const createOrderFromCart = useCallback(createOrderFromCartMutation.mutate, [createOrderFromCartMutation.mutate]);
+  const updateOrderStatus = useCallback(updateOrderStatusMutation.mutate, [updateOrderStatusMutation.mutate]);
+  const deleteOrder = useCallback(deleteOrderMutation.mutate, [deleteOrderMutation.mutate]);
+  const updateOrder = useCallback(updateOrderMutation.mutate, [updateOrderMutation.mutate]);
+  const addOrderItem = useCallback(addOrderItemMutation.mutate, [addOrderItemMutation.mutate]);
+  const removeOrderItem = useCallback(removeOrderItemMutation.mutate, [removeOrderItemMutation.mutate]);
+  const updateOrderItem = useCallback(updateOrderItemMutation.mutate, [updateOrderItemMutation.mutate]);
+  const processPayment = useCallback(processPaymentMutation.mutate, [processPaymentMutation.mutate]);
+  const startCookingOrderItem = useCallback(startCookingOrderItemMutation.mutate, [startCookingOrderItemMutation.mutate]);
+  const markOrderItemReady = useCallback(markOrderItemReadyMutation.mutate, [markOrderItemReadyMutation.mutate]);
+  const cancelOrder = useCallback(cancelOrderMutation.mutate, [cancelOrderMutation.mutate]);
+
   return {
     orders,
     isLoading,
@@ -138,18 +153,18 @@ export const useOrders = () => {
     useCookingOrders,
     useReadyOrders,
     // Mutations
-    createOrder: createOrderMutation.mutate,
-    createOrderFromCart: createOrderFromCartMutation.mutate,
-    updateOrderStatus: updateOrderStatusMutation.mutate,
-    deleteOrder: deleteOrderMutation.mutate,
-    updateOrder: updateOrderMutation.mutate,
-    addOrderItem: addOrderItemMutation.mutate,
-    removeOrderItem: removeOrderItemMutation.mutate,
-    updateOrderItem: updateOrderItemMutation.mutate,
-    processPayment: processPaymentMutation.mutate,
-    startCookingOrderItem: startCookingOrderItemMutation.mutate,
-    markOrderItemReady: markOrderItemReadyMutation.mutate,
-    cancelOrder: cancelOrderMutation.mutate,
+    createOrder,
+    createOrderFromCart,
+    updateOrderStatus,
+    deleteOrder,
+    updateOrder,
+    addOrderItem,
+    removeOrderItem,
+    updateOrderItem,
+    processPayment,
+    startCookingOrderItem,
+    markOrderItemReady,
+    cancelOrder,
     // Loading states
     isCreating: createOrderMutation.isPending,
     isCreatingFromCart: createOrderFromCartMutation.isPending,
@@ -189,12 +204,15 @@ export const useOrder = (orderId: string) => {
     },
   });
 
+  // Wrap mutation function in useCallback to prevent infinite re-renders
+  const updateOrderStatus = useCallback(updateOrderStatusMutation.mutate, [updateOrderStatusMutation.mutate]);
+
   return {
     order,
     isLoading,
     error,
     refetch,
-    updateOrderStatus: updateOrderStatusMutation.mutate,
+    updateOrderStatus,
     isUpdatingStatus: updateOrderStatusMutation.isPending,
   };
 };

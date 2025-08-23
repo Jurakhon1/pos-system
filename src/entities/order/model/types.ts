@@ -26,6 +26,9 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date;
   estimatedDeliveryTime?: Date;
+  discountAmount?: string;
+  cashAmount?: string;
+  cardAmount?: string;
 }
 
 export type OrderStatus = 

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, lazy } from "react";
 import { Settings } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
+import { useTheme } from "next-themes";
 
 // Динамические импорты для тяжелых компонентов
 const POSSidebar = dynamic(() => import("@/widgets/sidebar/POSSidebar"), {
@@ -45,7 +46,13 @@ const Toolbar = dynamic(() => import("@/widgets/toolbar/toolbar"), {
 // Компонент для условного рендеринга
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme } = useTheme();
   const isAuthPage = pathname === '/login' || pathname === '/register';
+
+  // Dynamic theme classes
+  const isDark = theme === 'dark';
+  const bgMain = isDark ? 'bg-gray-950' : 'bg-gray-50';
+  const bgContent = isDark ? 'bg-gray-950/50' : 'bg-white/50';
 
   if (isAuthPage) {
     return <>{children}</>;
@@ -53,7 +60,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <Suspense fallback={
-      <div className="flex h-screen w-full">
+      <div className={`flex h-screen w-full ${bgMain}`}>
         <div className="w-64 bg-background border-r border-border animate-pulse">
           <div className="h-16 bg-muted rounded-none" />
         </div>
@@ -71,25 +78,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       </div>
     }>
       <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full">
+        <div className={`flex h-screen w-full ${bgMain}`}>
           <POSSidebar />
 
-          <SidebarInset className="flex-1 overflow-auto bg-background min-w-0">
-            <div className="flex items-center gap-2 p-5 shadow-md shadow-border border-b border-border">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <SidebarTrigger className="h-8 w-8 p-1 hover:bg-muted hover:text-primary rounded-md transition-colors duration-200 border border-border">
-                      <Settings className="h-4 w-4" />
-                    </SidebarTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Переключить сайдбар</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Toolbar />
-            </div>
+          <SidebarInset className={`flex-1 overflow-auto ${bgContent} min-w-0`}>
+            <Toolbar />
             <main className="flex-1">
               {children}
             </main>

@@ -69,8 +69,8 @@ export interface OrderItem {
 // Типы для платежей в соответствии с API спецификацией
 export interface PaymentRequest {
   paymentMethod: 'cash' | 'card' | 'mixed';
-  cashAmount?: number;      // Должно быть decimal (например: 460.00)
-  cardAmount?: number;      // Должно быть decimal (например: 460.00)
+  cashAmount?: number;      // Должно быть decimal число (например: 460.00)
+  cardAmount?: number;      // Должно быть decimal число (например: 460.00)
   discountAmount: number;   // Всегда отправляется, даже если 0 (например: 0.00)
 }
 

@@ -4,6 +4,17 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { useTheme } from "next-themes";
+import { Clock } from "lucide-react";
+
+import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
+
+export const ThemeToggle = () => {
+  return (
+    <button className="p-2 rounded-lg">
+      <SunIcon className="h-6 w-6" />
+    </button>
+  );
+};
 
 export default function Toolbar() {
   const pathname = usePathname();
@@ -23,82 +34,45 @@ export default function Toolbar() {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  // Dynamic theme classes
+  const isDark = theme === 'dark';
+  const bgToolbar = isDark ? 'bg-gray-900/80' : 'bg-white/80';
+  const borderColor = isDark ? 'border-gray-800/50' : 'border-gray-200/50';
+  const textPrimary = isDark ? 'text-gray-100' : 'text-gray-900';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+  const bgButton = isDark ? 'bg-gray-800/50' : 'bg-gray-100/50';
+  const bgButtonHover = isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-200/50';
+  const borderButton = isDark ? 'border-gray-700/50' : 'border-gray-300/50';
+
   return (
-    <div className="flex justify-between items-center w-full">
+    <div className={`flex justify-between items-center w-full p-4 ${bgToolbar} backdrop-blur-xl border-b ${borderColor}`}>
       <div>
-        <h2 className="text-2xl font-bold uppercase">{pathname.slice(1)}</h2>
+        <h2 className={`text-2xl font-bold ${textPrimary} capitalize`}>
+          {pathname === '/' ? 'dashboard' : pathname.slice(1)}
+        </h2>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12,6 12,12 16,14" />
-          </svg>
-          <p>{currentDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</p>
+        <div className={`flex items-center gap-2 px-4 py-2 ${bgButton} ${borderButton} border rounded-xl ${textSecondary}`}>
+          <Clock className="w-4 h-4" />
+          <span className="font-medium">
+            {currentDate.toLocaleTimeString("ru-RU", { 
+              hour: "2-digit", 
+              minute: "2-digit" 
+            })}
+          </span>
         </div>
         <Button
           variant="outline"
           size="icon"
           onClick={toggleTheme}
-          className="h-8 w-8"
+          className={`h-10 w-10 ${bgButton} ${borderButton} ${bgButtonHover} transition-all duration-200 hover:shadow-lg`}
         >
           {!mounted ? (
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
+            <SunIcon className="w-4 h-4" />
           ) : theme === "dark" ? (
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2" />
-              <path d="M12 20v2" />
-              <path d="m4.93 4.93 1.41 1.41" />
-              <path d="m17.66 17.66 1.41 1.41" />
-              <path d="M2 12h2" />
-              <path d="M20 12h2" />
-              <path d="m6.34 17.66-1.41 1.41" />
-              <path d="m19.07 4.93-1.41 1.41" />
-            </svg>
+            <SunIcon className="w-4 h-4" />
           ) : (
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
+            <MoonIcon className="w-4 h-4" />
           )}
         </Button>
       </div>

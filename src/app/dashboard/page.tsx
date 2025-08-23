@@ -9,9 +9,14 @@ import {
   Package, 
   BarChart3, 
   Users, 
-  Clock} from "lucide-react";
+  Clock,
+  Plus,
+  Settings,
+  FileText
+} from "lucide-react";
 import { RoleGuard } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
+import { PageLayout, QuickActionButton } from "@/shared/components/PageLayout";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -47,55 +52,14 @@ export default function DashboardPage() {
     }
   ];
 
-
   return (
-
     <RoleGuard requiredRoles={[USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN]}>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Панель управления</h1>
-            <p className="text-gray-600 mt-2">
-              Добро пожаловать в POS систему
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Сегодня</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {new Date().toLocaleDateString('ru-RU', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    {stat.title}
-                  </CardTitle>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                  <p className={`text-xs ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                    {stat.change} с прошлой недели
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
+      <PageLayout
+        title="Панель управления"
+        subtitle="Добро пожаловать в POS систему"
+        icon={<BarChart3 className="w-8 h-8" />}
+        stats={stats}
+      >
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -106,24 +70,30 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <button 
+                <QuickActionButton
+                  icon={<ShoppingCart className="w-5 h-5" />}
+                  title="Новый заказ"
+                  subtitle="Создать заказ"
                   onClick={() => router.push('/pos')}
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left cursor-pointer"
-                >
-                  <div className="font-medium text-gray-900">Новый заказ</div>
-                  <div className="text-sm text-gray-500">Создать заказ</div>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                  <div className="font-medium text-gray-900">Добавить товар</div>
-                  <div className="text-sm text-gray-500">В каталог</div>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                  <div className="text-sm text-gray-500">Просмотр</div>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                  <div className="font-medium text-gray-900">Настройки</div>
-                  <div className="text-sm text-gray-500">Система</div>
-                </button>
+                />
+                <QuickActionButton
+                  icon={<Plus className="w-5 h-5" />}
+                  title="Добавить товар"
+                  subtitle="В каталог"
+                  onClick={() => router.push('/admin/products')}
+                />
+                <QuickActionButton
+                  icon={<FileText className="w-5 h-5" />}
+                  title="Отчеты"
+                  subtitle="Просмотр"
+                  onClick={() => router.push('/reports')}
+                />
+                <QuickActionButton
+                  icon={<Settings className="w-5 h-5" />}
+                  title="Настройки"
+                  subtitle="Система"
+                  onClick={() => router.push('/settings')}
+                />
               </div>
             </CardContent>
           </Card>
@@ -148,14 +118,14 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Товар &quot;Пицца Маргарита&quot; добавлен</div>
+                    <div className="text-sm font-medium text-gray-900">Товар "Пицца Маргарита" добавлен</div>
                     <div className="text-xs text-gray-500">15 минут назад</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Пользователь &quot;admin&quot; вошел в систему</div>
+                    <div className="text-sm font-medium text-gray-900">Пользователь "admin" вошел в систему</div>
                     <div className="text-xs text-gray-500">1 час назад</div>
                   </div>
                 </div>
@@ -163,7 +133,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageLayout>
     </RoleGuard>
   );
 }

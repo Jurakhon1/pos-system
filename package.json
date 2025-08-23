@@ -17,6 +17,7 @@
     "clean:all": "rm -rf .next out dist node_modules package-lock.json && npm install"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.7",
@@ -29,7 +30,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
-    "lucide-react": "^0.539.0",
+    "lucide-react": "^0.541.0",
     "next": "15.4.6",
     "next-themes": "^0.4.6",
     "react": "19.1.0",
