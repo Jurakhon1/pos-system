@@ -20,8 +20,6 @@ import {
   CreditCard,
   Search,
   Filter,
-  ChevronUp,
-  ChevronDown,
   Clock,
   CheckCircle,
 } from "lucide-react";
@@ -341,9 +339,9 @@ export default function POSPage() {
                         title={collapsedCategories.has(categoryName) ? "Развернуть категорию" : "Свернуть категорию"}
                       >
                         {collapsedCategories.has(categoryName) ? (
-                          <ChevronDown className="w-4 h-4" />
+                          <Plus className="w-4 h-4" />
                         ) : (
-                          <ChevronUp className="w-4 h-4" />
+                          <Minus className="w-4 h-4" />
                         )}
                       </Button>
                     </div>
