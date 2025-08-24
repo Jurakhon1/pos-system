@@ -120,7 +120,7 @@ export default function POSPage() {
     
     const grouped: Record<string, MenuItem[]> = {};
     
-    filteredMenuItems.forEach(item => {
+    filteredMenuItems.forEach((item: MenuItem) => {
       const categoryName = item.category?.name || 'Без категории';
       if (!grouped[categoryName]) {
         grouped[categoryName] = [];
@@ -143,7 +143,7 @@ export default function POSPage() {
   // Получаем отсортированный список категорий для отображения
   const sortedCategories = useMemo(() => {
     if (!categories) return [];
-    return [...categories].sort((a, b) => a.display_order - b.display_order);
+    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
   }, [categories]);
 
   const handleQuickOrder = () => {
@@ -210,7 +210,7 @@ export default function POSPage() {
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-600">
-                        {filteredMenuItems?.filter(item => item.image_url).length || 0}
+                        {filteredMenuItems?.filter((item: MenuItem) => item.image_url).length || 0}
                       </div>
                       <div className="text-sm text-gray-600">С фото</div>
                     </div>
@@ -296,7 +296,7 @@ export default function POSPage() {
                     >
                       {category.name}
                       <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
-                        {filteredMenuItems?.filter(item => item.category_id === category.id).length || 0}
+                        {filteredMenuItems?.filter((item: MenuItem) => item.category_id === category.id).length || 0}
                       </span>
                     </Button>
                   ))}
