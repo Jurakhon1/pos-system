@@ -41,7 +41,7 @@ export const ROLE_ACCESS = {
   [USER_ROLES.MANAGER]: ['/dashboard', '/reports', '/settings', '/kitchen', '/pos', '/orders'],
   [USER_ROLES.CHEF]: ['/kitchen'],
   [USER_ROLES.COOK]: ['/kitchen'],
-  [USER_ROLES.WAITER]: ['/pos', '/orders']
+  [USER_ROLES.WAITER]: ['/pos']
 } as const;
 
 // Дефолтная страница для каждой роли

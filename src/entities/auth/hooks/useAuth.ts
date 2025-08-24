@@ -73,10 +73,17 @@ export const useAuth = () => {
 
   const hasAccessToPage = useCallback((pagePath: string): boolean => {
     const role = getCurrentUserRole();
-    if (!role) return false;
+    if (!role) {
+      console.log('🔍 hasAccessToPage: Роль не определена');
+      return false;
+    }
     
     const allowedPages = ROLE_ACCESS[role];
-    return allowedPages.includes(pagePath as never);
+    console.log('🔍 hasAccessToPage: Роль:', role, 'Доступные страницы:', allowedPages, 'Запрашиваемая страница:', pagePath);
+    
+    const hasAccess = allowedPages.includes(pagePath as never);
+    console.log('🔍 hasAccessToPage: Доступ:', hasAccess);
+    return hasAccess;
   }, [getCurrentUserRole]);
 
   const getDefaultPageForRole = useCallback((): string => {

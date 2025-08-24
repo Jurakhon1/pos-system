@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/entities/cart";
 import { useOrderCreation, OrderFormData } from "@/features/order-creation/hooks/useOrderCreation";
 import { Button } from "@/shared/ui/button";
@@ -20,7 +20,8 @@ import {
   CreditCard,
   Search,
   Filter,
-  
+  ChevronUp,
+  ChevronDown,
   Clock,
   CheckCircle,
 } from "lucide-react";
@@ -43,8 +44,12 @@ interface MenuItem {
   name: string;
   price: number;
   description: string;
-  imageUrl?: string;
-  categoryId: string;
+  image_url?: string;
+  category_id: string;
+  category: {
+    id: string;
+    name: string;
+  };
 }
 
 export default function POSPage() {
@@ -61,6 +66,9 @@ export default function POSPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [showOnlyWithImages, setShowOnlyWithImages] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'category'>('category');
   const { tables, isLoading, error, fetchTables, updateTableStatus } = useTables();
   const { items: cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { createOrder, isCreating } = useOrderCreation();
@@ -99,13 +107,46 @@ export default function POSPage() {
 
   const totalAmount = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0);
 
-  // Фильтрация блюд по поиску и категории
+  // Фильтрация блюд по поиску, категории и изображениям
   const filteredMenuItems = menuItems?.filter((item: MenuItem) => {
-    const matchesCategory = selectedCategory === null || item.categoryId === selectedCategory;
+    const matchesCategory = selectedCategory === null || item.category_id === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+                         (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesImages = !showOnlyWithImages || item.image_url;
+    return matchesCategory && matchesSearch && matchesImages;
   });
+
+  // Группировка блюд по категориям для лучшей организации
+  const groupedMenuItems = useMemo(() => {
+    if (!filteredMenuItems) return {};
+    
+    const grouped: Record<string, MenuItem[]> = {};
+    
+    filteredMenuItems.forEach(item => {
+      const categoryName = item.category?.name || 'Без категории';
+      if (!grouped[categoryName]) {
+        grouped[categoryName] = [];
+      }
+      grouped[categoryName].push(item);
+    });
+
+    // Сортировка блюд внутри категорий
+    Object.keys(grouped).forEach(categoryName => {
+      if (sortBy === 'name') {
+        grouped[categoryName].sort((a, b) => a.name.localeCompare(b.name));
+      } else if (sortBy === 'price') {
+        grouped[categoryName].sort((a, b) => Number(a.price) - Number(b.price));
+      }
+    });
+    
+    return grouped;
+  }, [filteredMenuItems, sortBy]);
+
+  // Получаем отсортированный список категорий для отображения
+  const sortedCategories = useMemo(() => {
+    if (!categories) return [];
+    return [...categories].sort((a, b) => a.display_order - b.display_order);
+  }, [categories]);
 
   const handleQuickOrder = () => {
     if (cartItems.length === 0) return;
@@ -117,6 +158,18 @@ export default function POSPage() {
       // Если заказ на вынос или стол выбран, создаем заказ сразу
       handleCreateOrder();
     }
+  };
+
+  const toggleCategory = (categoryName: string) => {
+    setCollapsedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName);
+      } else {
+        newSet.add(categoryName);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -141,6 +194,44 @@ export default function POSPage() {
           {/* Основная область - Меню */}
           <div className="flex-1 transition-all duration-300 pr-96">
             <div className="p-6">
+              {/* Статистика */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {filteredMenuItems?.length || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Всего блюд</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {Object.keys(groupedMenuItems).length}
+                      </div>
+                      <div className="text-sm text-gray-600">Категорий</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {filteredMenuItems?.filter(item => item.image_url).length || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">С фото</div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-sm text-gray-600">Активные фильтры:</div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      {selectedCategory && (
+                        <div>• Категория: {sortedCategories.find(cat => cat.id === selectedCategory)?.name}</div>
+                      )}
+                      {searchQuery && <div>• Поиск: "{searchQuery}"</div>}
+                      {showOnlyWithImages && <div>• Только с фото</div>}
+                      {sortBy !== 'category' && <div>• Сортировка: {sortBy === 'name' ? 'По названию' : 'По цене'}</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Поиск и фильтры */}
               <div className="mb-6">
                 <div className="flex items-center space-x-4 mb-4">
@@ -161,78 +252,158 @@ export default function POSPage() {
                     <Filter className="w-4 h-4 mr-2" />
                     Сбросить
                   </Button>
+                  
+                  <div className="flex items-center space-x-2">
+                    <label className="flex items-center space-x-2 text-sm text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={showOnlyWithImages}
+                        onChange={(e) => setShowOnlyWithImages(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Только с фото</span>
+                    </label>
+                  </div>
+                  
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'category')}
+                    className="h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="category">По категориям</option>
+                    <option value="name">По названию</option>
+                    <option value="price">По цене</option>
+                  </select>
                 </div>
 
                 {/* Категории */}
-                <div className="flex space-x-2 overflow-x-auto pb-2">
+                <div className="categories-filter flex space-x-3 overflow-x-auto pb-2">
                   <Button
                     variant={selectedCategory === null ? "default" : "outline"}
                     onClick={() => setSelectedCategory(null)}
-                    className="whitespace-nowrap px-6 py-3 h-auto"
+                    className="whitespace-nowrap px-6 py-3 h-auto font-medium"
                   >
-                    🍽️ Все блюда
+                    <span className="mr-2">🍽️</span>
+                    Все блюда
+                    <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+                      {filteredMenuItems?.length || 0}
+                    </span>
                   </Button>
-                  {categories?.map((category: Category) => (
+                  {sortedCategories?.map((category: Category) => (
                     <Button
                       key={category.id}
                       variant={selectedCategory === category.id ? "default" : "outline"}
                       onClick={() => setSelectedCategory(category.id)}
-                      className="whitespace-nowrap px-6 py-3 h-auto"
+                      className="whitespace-nowrap px-6 py-3 h-auto font-medium"
                     >
                       {category.name}
+                      <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+                        {filteredMenuItems?.filter(item => item.category_id === category.id).length || 0}
+                      </span>
                     </Button>
                   ))}
                 </div>
               </div>
 
-              {/* Список блюд */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredMenuItems?.map((item: MenuItem) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-blue-300 group cursor-pointer"
-                    onClick={() => addToCart({
-                      id: item.id,
-                      name: item.name,
-                      price: item.price,
-                      ...(item.imageUrl && { imageUrl: item.imageUrl }),
-                      menuItemId: item.id
-                    })}
-                  >
-                    <div className="relative">
-                      <div className="h-48 overflow-hidden rounded-t-xl">
-                        {item.imageUrl ? (
-                          <Image
-                            src={item.imageUrl}
-                            alt={item.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-200"
-                          />
+              {/* Список блюд по категориям */}
+              <div className="space-y-8">
+                {Object.entries(groupedMenuItems).map(([categoryName, items]) => (
+                  <div key={categoryName} className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <h3 
+                          className="font-bold text-xl text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => {
+                            const category = sortedCategories.find(cat => cat.name === categoryName);
+                            if (category) {
+                              setSelectedCategory(category.id);
+                              // Плавная прокрутка к фильтрам
+                              document.querySelector('.categories-filter')?.scrollIntoView({ 
+                                behavior: 'smooth',
+                                block: 'center'
+                              });
+                            }
+                          }}
+                          title="Нажать для фильтрации по этой категории"
+                        >
+                          {categoryName}
+                        </h3>
+                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                          {items.length} {items.length === 1 ? 'блюдо' : items.length < 5 ? 'блюда' : 'блюд'}
+                        </span>
+                      </div>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleCategory(categoryName)}
+                        className="h-8 w-8 p-0 hover:bg-gray-100"
+                        title={collapsedCategories.has(categoryName) ? "Развернуть категорию" : "Свернуть категорию"}
+                      >
+                        {collapsedCategories.has(categoryName) ? (
+                          <ChevronDown className="w-4 h-4" />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                            <span className="text-4xl">🍽️</span>
-                          </div>
+                          <ChevronUp className="w-4 h-4" />
                         )}
-                      </div>
-                      <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                        {item.price} ₽
-                      </div>
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-transform duration-200 rounded-t-xl" />
+                      </Button>
                     </div>
                     
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-lg">{item.name}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">{item.description}</p>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-blue-600">{item.price} ₽</span>
+                    <div 
+                      className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 transition-all duration-300 ease-in-out ${
+                        collapsedCategories.has(categoryName) 
+                          ? 'max-h-0 opacity-0 overflow-hidden' 
+                          : 'max-h-screen opacity-100'
+                      }`}
+                    >
+                        {items.map((item: MenuItem) => (
+                          <div
+                            key={item.id}
+                            className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-blue-300 group cursor-pointer"
+                            onClick={() => addToCart({
+                              id: item.id,
+                              name: item.name,
+                              price: item.price,
+                              ...(item.image_url && { imageUrl: item.image_url }),
+                              menuItemId: item.id
+                            })}
+                          >
+                            <div className="relative">
+                              <div className="h-48 overflow-hidden rounded-t-xl">
+                                {item.image_url ? (
+                                  <Image
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                    <span className="text-4xl">🍽️</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                                {item.price} ₽
+                              </div>
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-transform duration-200 rounded-t-xl" />
+                            </div>
+                            
+                            <div className="p-4">
+                              <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-lg">{item.name}</h3>
+                              <p className="text-gray-600 text-sm line-clamp-2 mb-3">{item.description}</p>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-xl font-bold text-blue-600">{item.price} ₽</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
                 ))}
               </div>
 
-              {filteredMenuItems?.length === 0 && (
+              {Object.keys(groupedMenuItems).length === 0 && (
                 <div className="text-center py-16">
                   <div className="text-gray-400 mb-4">
                     <Search className="mx-auto h-16 w-16" />
@@ -240,9 +411,27 @@ export default function POSPage() {
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     Блюда не найдены
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 mb-4">
                     Попробуйте изменить поисковый запрос или выберите другую категорию
                   </p>
+                  
+                  {searchQuery && (
+                    <div className="text-sm text-gray-400">
+                      Поисковый запрос: "{searchQuery}"
+                    </div>
+                  )}
+                  
+                  {selectedCategory && (
+                    <div className="text-sm text-gray-400 mt-2">
+                      Выбрана категория: {sortedCategories.find(cat => cat.id === selectedCategory)?.name}
+                    </div>
+                  )}
+                  
+                  {showOnlyWithImages && (
+                    <div className="text-sm text-gray-400 mt-2">
+                      Показаны только блюда с изображениями
+                    </div>
+                  )}
                 </div>
               )}
             </div>

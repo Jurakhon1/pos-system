@@ -27,20 +27,27 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   useEffect(() => {
     const checkAccess = () => {
       if (!isAuthenticated()) {
+        console.log('🔒 RoleGuard: Пользователь не аутентифицирован');
         router.push('/login');
         return;
       }
 
       const userRole = getCurrentUserRole();
       if (!userRole) {
+        console.log('🔒 RoleGuard: Роль пользователя не определена');
         router.push('/login');
         return;
       }
 
+      console.log('🔍 RoleGuard: Проверка доступа для роли:', userRole, 'на странице:', pathname);
+      console.log('🔍 RoleGuard: Требуемые роли:', requiredRoles);
+
       // Если указаны конкретные роли, проверяем их
       if (requiredRoles.length > 0) {
         const hasRequiredRole = requiredRoles.includes(userRole);
+        console.log('🔍 RoleGuard: Проверка требуемых ролей:', hasRequiredRole);
         if (!hasRequiredRole) {
+          console.log('❌ RoleGuard: Роль не соответствует требованиям');
           if (redirectTo) {
             router.push(redirectTo);
           } else {
@@ -51,11 +58,15 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
       }
 
       // Проверяем доступ к текущей странице (используем pathname из Next.js)
-      if (!hasAccessToPage(pathname)) {
+      const hasPageAccess = hasAccessToPage(pathname);
+      console.log('🔍 RoleGuard: Проверка доступа к странице:', hasPageAccess);
+      if (!hasPageAccess) {
+        console.log('❌ RoleGuard: Нет доступа к странице');
         redirectToDefaultPage();
         return;
       }
 
+      console.log('✅ RoleGuard: Доступ разрешен');
       setHasAccess(true);
       setIsChecking(false);
     };

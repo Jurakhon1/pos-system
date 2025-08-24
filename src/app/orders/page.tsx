@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useOrders } from "@/entities/orders/hooks/useOrders";
 import { Order, OrderItem, ORDER_STATUSES, PaymentRequest } from "@/shared/types/orders";
-import { RoleGuard } from "@/shared/components/RoleGuard";
+import { RoleGuard, RoleBasedContent } from "@/shared/components/RoleGuard";
 import { USER_ROLES } from "@/shared/types/auth";
 import { PageLayout } from "@/shared/components/PageLayout";
 
@@ -49,7 +49,8 @@ export default function OrdersPage() {
   // reset при выборе нового заказа
   useEffect(() => {
     if (selectedOrder) {
-      setCashAmount(0);
+      const orderTotal = Number(selectedOrder.total_amount);
+      setCashAmount(orderTotal);
       setCardAmount(0);
       setDiscountAmount(0);
       setPaymentMethod("cash");
@@ -162,16 +163,47 @@ export default function OrdersPage() {
   const handleCashAmountChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
     setCashAmount(numValue);
+    
+    // Автоматически обновляем поле карты при смешанном способе
+    if (paymentMethod === 'mixed' && selectedOrder) {
+      const orderTotal = Number(selectedOrder.total_amount);
+      const discount = discountAmount || 0;
+      const amountToPay = orderTotal - discount;
+      setCardAmount(Math.max(0, amountToPay - numValue));
+    }
   };
 
   const handleCardAmountChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
     setCardAmount(numValue);
+    
+    // Автоматически обновляем поле наличных при смешанном способе
+    if (paymentMethod === 'mixed' && selectedOrder) {
+      const orderTotal = Number(selectedOrder.total_amount);
+      const discount = discountAmount || 0;
+      const amountToPay = orderTotal - discount;
+      setCashAmount(Math.max(0, amountToPay - numValue));
+    }
   };
 
   const handleDiscountAmountChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
     setDiscountAmount(numValue);
+    
+    // Автоматически обновляем поля оплаты при изменении скидки
+    if (selectedOrder) {
+      const orderTotal = Number(selectedOrder.total_amount);
+      const amountToPay = orderTotal - numValue;
+      
+      if (paymentMethod === 'cash') {
+        setCashAmount(amountToPay);
+      } else if (paymentMethod === 'card') {
+        setCardAmount(amountToPay);
+      } else if (paymentMethod === 'mixed') {
+        setCashAmount(Math.floor(amountToPay / 2));
+        setCardAmount(amountToPay - Math.floor(amountToPay / 2));
+      }
+    }
   };
 
   // Calculate change amount
@@ -310,7 +342,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <RoleGuard requiredRoles={[USER_ROLES.CASHIER, USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]}>
+    <RoleGuard requiredRoles={[USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]}>
       <PageLayout
         title="📋 Управление заказами"
         subtitle="Просмотр и управление всеми заказами ресторана"
@@ -542,66 +574,73 @@ export default function OrdersPage() {
 
                   {/* Кнопки действий */}
                   <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    {order.status === 'ready' && (
-                      <Button 
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setIsPaymentModalOpen(true);
-                        }}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                        disabled={isProcessingPayment}
-                      >
-                        {isProcessingPayment ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Обработка...
-                          </>
-                        ) : (
-                          <>
-                            💳 Обработать платеж
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    {/* Кнопка обработки платежа - только для cashier */}
+                    <RoleBasedContent roles={[USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]}>
+                      {order.status === 'ready' && (
+                        <Button 
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setIsPaymentModalOpen(true);
+                          }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          disabled={isProcessingPayment}
+                        >
+                          {isProcessingPayment ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Обработка...
+                            </>
+                          ) : (
+                            <>
+                              💳 Обработать платеж
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </RoleBasedContent>
                     
-                    {order.status === 'pending' && (
-                      <Button 
-                        onClick={() => handleStatusUpdate(order.id, 'cooking')}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        disabled={isUpdatingStatus}
-                      >
-                        {isUpdatingStatus ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Обновление...
-                          </>
-                        ) : (
-                          <>
-                            👨‍🍳 Начать готовить
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    {/* Кнопки изменения статуса - только для waiter */}
+                    <RoleBasedContent roles={[USER_ROLES.WAITER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]}>
+                      {order.status === 'pending' && (
+                        <Button 
+                          onClick={() => handleStatusUpdate(order.id, 'cooking')}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                          disabled={isUpdatingStatus}
+                        >
+                          {isUpdatingStatus ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Обновление...
+                            </>
+                          ) : (
+                            <>
+                              👨‍🍳 Начать готовить
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      
+                      {order.status === 'cooking' && (
+                        <Button 
+                          onClick={() => handleStatusUpdate(order.id, 'ready')}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          disabled={isUpdatingStatus}
+                        >
+                          {isUpdatingStatus ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Обновление...
+                            </>
+                          ) : (
+                            <>
+                              ✅ Готово
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </RoleBasedContent>
                     
-                    {order.status === 'cooking' && (
-                      <Button 
-                        onClick={() => handleStatusUpdate(order.id, 'ready')}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                        disabled={isUpdatingStatus}
-                      >
-                        {isUpdatingStatus ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Обновление...
-                          </>
-                        ) : (
-                          <>
-                            ✅ Готово
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    
+                    {/* Кнопка редактирования - для всех ролей с доступом */}
                     <Button 
                       variant="outline"
                       className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -615,8 +654,9 @@ export default function OrdersPage() {
           )}
         </div>
 
-        {/* Модальное окно платежей */}
-        {isPaymentModalOpen && selectedOrder && (
+        {/* Модальное окно платежей - только для cashier */}
+        <RoleBasedContent roles={[USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MANAGER]}>
+          {isPaymentModalOpen && selectedOrder && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-6">
@@ -643,6 +683,9 @@ export default function OrdersPage() {
                   ₽{Number(selectedOrder.total_amount).toFixed(2)}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">Сумма к оплате</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  💡 Поля оплаты заполняются автоматически
+                </p>
               </div>
 
               {/* Payment Method Selection */}
@@ -654,7 +697,15 @@ export default function OrdersPage() {
                   <Button
                     type="button"
                     variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('cash')}
+                    onClick={() => {
+                      setPaymentMethod('cash');
+                      if (selectedOrder) {
+                        const orderTotal = Number(selectedOrder.total_amount);
+                        const discount = discountAmount || 0;
+                        setCashAmount(orderTotal - discount);
+                        setCardAmount(0);
+                      }
+                    }}
                     className="text-sm"
                   >
                     💵 Наличные
@@ -662,7 +713,15 @@ export default function OrdersPage() {
                   <Button
                     type="button"
                     variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('card')}
+                    onClick={() => {
+                      setPaymentMethod('card');
+                      if (selectedOrder) {
+                        const orderTotal = Number(selectedOrder.total_amount);
+                        const discount = discountAmount || 0;
+                        setCardAmount(orderTotal - discount);
+                        setCashAmount(0);
+                      }
+                    }}
                     className="text-sm"
                   >
                     💳 Карта
@@ -670,7 +729,16 @@ export default function OrdersPage() {
                   <Button
                     type="button"
                     variant={paymentMethod === 'mixed' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('mixed')}
+                    onClick={() => {
+                      setPaymentMethod('mixed');
+                      if (selectedOrder) {
+                        const orderTotal = Number(selectedOrder.total_amount);
+                        const discount = discountAmount || 0;
+                        const amountToPay = orderTotal - discount;
+                        setCashAmount(Math.floor(amountToPay / 2));
+                        setCardAmount(amountToPay - Math.floor(amountToPay / 2));
+                      }
+                    }}
                     className="text-sm"
                   >
                     🔄 Смешанно
@@ -694,6 +762,9 @@ export default function OrdersPage() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       placeholder="0.00"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Автоматически заполнено суммой заказа
+                    </p>
                   </div>
                 )}
 
@@ -711,6 +782,9 @@ export default function OrdersPage() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       placeholder="0.00"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Автоматически заполнено суммой заказа
+                    </p>
                   </div>
                 )}
 
@@ -729,6 +803,9 @@ export default function OrdersPage() {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                         placeholder="0.00"
                       />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Автоматически распределено
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -743,6 +820,9 @@ export default function OrdersPage() {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                         placeholder="0.00"
                       />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Автоматически распределено
+                      </p>
                     </div>
                   </div>
                 )}
@@ -762,6 +842,9 @@ export default function OrdersPage() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="0.00"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    При изменении скидки поля оплаты обновляются автоматически
+                  </p>
                 </div>
 
                 {/* Payment Summary */}
@@ -820,6 +903,7 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
+        </RoleBasedContent>
       </PageLayout>
     </RoleGuard>
   );
